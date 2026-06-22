@@ -1087,7 +1087,7 @@ private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String
                                 feedbackLabel = when (value) {
                                     1 -> "Like registriert"
                                     -1 -> "Dislike registriert"
-                                    else -> "Superlike!"
+                                    else -> "Stern registriert"
                                 }
                                 onAuthRequired()
                             }
@@ -1187,10 +1187,10 @@ private fun JokeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> 
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-            ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.weight(1f), onAuthRequired)
-            ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.weight(1f), onAuthRequired)
-            ReactionTile("Super", Icons.Filled.Star, joke.viewerVote == 5, Modifier.weight(1f), onAuthRequired)
-            ReactionTile(if (joke.viewerFavorite) "Gemerkt" else "${joke.favoriteCount}", Icons.Filled.Bookmark, joke.viewerFavorite, Modifier.weight(1f), onAuthRequired)
+            ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.weight(1f), onAuthRequired, showTitle = false)
+            ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.weight(1f), onAuthRequired, showTitle = false)
+            ReactionTile("Superlike", Icons.Filled.Star, joke.viewerVote == 5, Modifier.weight(1f), onAuthRequired, showTitle = false)
+            ReactionTile(if (joke.viewerFavorite) "Gemerkt" else "Merken", Icons.Filled.Bookmark, joke.viewerFavorite, Modifier.weight(1f), onAuthRequired)
         }
     }
 }
@@ -1246,7 +1246,7 @@ private fun ScoreBadge(score: Int) {
 }
 
 @Composable
-private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit, showTitle: Boolean = true) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -1254,8 +1254,10 @@ private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modi
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp)
     ) {
-        Icon(icon, null, tint = if (active) Comic.Red else Comic.Ink)
-        Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Icon(icon, title, tint = if (active) Comic.Red else Comic.Ink)
+        if (showTitle) {
+            Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        }
     }
 }
 
