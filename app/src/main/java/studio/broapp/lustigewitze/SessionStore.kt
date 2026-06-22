@@ -24,6 +24,8 @@ class SessionStore(
         private set
     var profileError by mutableStateOf<String?>(null)
         private set
+    var accountSuccessMessage by mutableStateOf<String?>(null)
+        private set
     var feedItems by mutableStateOf<List<MobileJoke>>(emptyList())
         private set
     var feedError by mutableStateOf<String?>(null)
@@ -166,6 +168,7 @@ class SessionStore(
         val token = accessToken ?: return
         isUpdatingAccount = true
         profileError = null
+        accountSuccessMessage = null
         try {
             val result = apiClient.updateAccount(
                 accessToken = token,
@@ -175,12 +178,18 @@ class SessionStore(
             )
             persistTokens(result.accessToken, result.refreshToken)
             currentUser = result.user
+            accountSuccessMessage = if (result.user.isGuest) "Gastkonto erfolgreich umgewandelt." else "Kontodaten gespeichert."
             loadProfile(result.user.username)
         } catch (err: MobileApiException) {
             profileError = err.fields.values.firstOrNull() ?: err.message
+            accountSuccessMessage = null
         } finally {
             isUpdatingAccount = false
         }
+    }
+
+    fun clearAccountSuccessMessage() {
+        accountSuccessMessage = null
     }
 
     suspend fun blockAuthorAndReport(authorId: String, jokeId: String): Boolean {

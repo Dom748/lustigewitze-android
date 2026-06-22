@@ -46,6 +46,13 @@ test("android profile lets guests upgrade and regular users edit email with one-
   assert.equal(mobileApi.includes("canChangeUsername"), true, "Mobile auth user parsing should retain the username-change capability flag");
 });
 
+test("android account flow shows visible success feedback after saving", () => {
+  assert.equal(sessionStore.includes("var accountSuccessMessage by mutableStateOf<String?>(null)"), true, "SessionStore should keep a visible success state for account updates");
+  assert.equal(sessionStore.includes('accountSuccessMessage = if (result.user.isGuest) "Gastkonto erfolgreich umgewandelt." else "Kontodaten gespeichert."'), true, "Successful account updates should set a user-facing success message");
+  assert.equal(source.includes("sessionStore.accountSuccessMessage?.let"), true, "Profile screen should render the shared success feedback");
+  assert.equal(source.includes("Zuletzt erfolgreich gespeichert."), true, "Profile screen should keep a quiet saved-state hint near the CTA");
+});
+
 test("android random screen uses the new swipe-forward helper copy", () => {
   assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should show the requested new subtitle");
 });

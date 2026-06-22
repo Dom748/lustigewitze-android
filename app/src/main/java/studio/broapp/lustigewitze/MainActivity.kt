@@ -851,6 +851,7 @@ private fun ProfileScreen(
                     onValueChange = {
                         editUsername = it
                         accountFormError = null
+                        sessionStore.clearAccountSuccessMessage()
                     },
                     label = { Text("Name") },
                     enabled = currentUser?.isGuest == true || currentUser?.canChangeUsername == true,
@@ -864,6 +865,7 @@ private fun ProfileScreen(
                     onValueChange = {
                         editEmail = it
                         accountFormError = null
+                        sessionStore.clearAccountSuccessMessage()
                     },
                     label = { Text("E-Mail") },
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
@@ -874,10 +876,14 @@ private fun ProfileScreen(
                         onValueChange = {
                             editPassword = it
                             accountFormError = null
+                            sessionStore.clearAccountSuccessMessage()
                         },
                         label = { Text("Passwort") },
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
                     )
+                }
+                sessionStore.accountSuccessMessage?.let {
+                    Text(it, color = Color(0xFF1B7F3B), modifier = Modifier.padding(top = 10.dp))
                 }
                 accountFormError?.let {
                     Text(it, color = Comic.Red, modifier = Modifier.padding(top = 10.dp))
@@ -909,6 +915,11 @@ private fun ProfileScreen(
                         }
                     },
                     enabled = !sessionStore.isUpdatingAccount
+                )
+                Text(
+                    if (sessionStore.accountSuccessMessage != null) "Zuletzt erfolgreich gespeichert." else if (currentUser?.isGuest == true) "Danach läuft dein Gastprofil als normaler Account weiter." else "Speichert Name und Mail direkt im Profil.",
+                    color = Comic.Muted,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
             if (accountDeleted) {
