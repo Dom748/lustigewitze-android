@@ -16,6 +16,7 @@ test('feed screen supports swipe voting with right left and up gestures', () => 
   assert.match(mainActivity, /Dislike registriert/);
   assert.doesNotMatch(mainActivity, /Superlike!/);
   assert.match(mainActivity, /showTitle = false/);
+  assert.match(mainActivity, /Modifier\.size\(if \(showTitle\) 24\.dp else 32\.dp\)/);
   assert.match(mainActivity, /else "Merken"/);
   assert.match(mainActivity, /SwipeVoteBadge/);
   assert.match(mainActivity, /label = "TOP"/);

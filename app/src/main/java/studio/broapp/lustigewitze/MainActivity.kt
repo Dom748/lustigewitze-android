@@ -1252,9 +1252,14 @@ private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modi
         modifier = modifier
             .background(if (active) Comic.Yellow else Comic.BlueSoft, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp)
+            .padding(vertical = if (showTitle) 10.dp else 12.dp)
     ) {
-        Icon(icon, title, tint = if (active) Comic.Red else Comic.Ink)
+        Icon(
+            icon,
+            title,
+            tint = if (active) Comic.Red else Comic.Ink,
+            modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
+        )
         if (showTitle) {
             Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
         }
