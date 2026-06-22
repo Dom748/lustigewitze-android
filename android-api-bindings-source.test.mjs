@@ -46,3 +46,17 @@ test("android ui is wired to the real session store instead of local demo-only a
   assert.match(mainActivity, /sessionStore\.loadProfile\(/);
   assert.match(mainActivity, /sessionStore\.loadOwnProfile\(/);
 });
+
+test("android guest profile no longer fakes a logged-in pointenpaule account", () => {
+  assert.match(mainActivity, /Tab\.Profile -> ProfileScreen\([\s\S]*username = sessionStore\.currentUser\?\.username,/);
+  assert.match(mainActivity, /if \(username == null\) \{[\s\S]*badge = "Gast"/);
+  assert.match(mainActivity, /Text\("Gastkonto aktiv"/);
+  assert.match(mainActivity, /PrimaryButton\("Login \/ Register", Icons\.Filled\.Login, onClick = onAuthRequired\)/);
+});
+
+test("android account deletion copy reflects the real mobile api flow", () => {
+  assert.match(mainActivity, /StatusPanel\("Konto gelöscht", "Dein Account wurde über die Mobile API gelöscht und lokal aus der Session entfernt\."\)/);
+  assert.match(mainActivity, /Text\("Dieser Schritt löscht dein Konto über die Mobile API und entfernt deine Session auf diesem Gerät\."/);
+  assert.doesNotMatch(mainActivity, /Demo-State: Account wurde lokal als gelöscht markiert\./);
+  assert.doesNotMatch(mainActivity, /Dieser Demo-Flow markiert den Account lokal als gelöscht\./);
+});

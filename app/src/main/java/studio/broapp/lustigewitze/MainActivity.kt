@@ -357,7 +357,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     onOpenProfile = { selectedProfileUsername = it }
                 )
                 Tab.Profile -> ProfileScreen(
-                    username = sessionStore.currentUser?.username ?: "pointenpaule",
+                    username = sessionStore.currentUser?.username,
                     isOwnProfile = sessionStore.currentUser != null,
                     accountDeleted = accountDeleted,
                     sessionStore = sessionStore,
@@ -658,35 +658,41 @@ private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (Stri
 
 @Composable
 private fun ProfileScreen(
-    username: String,
+    username: String?,
     isOwnProfile: Boolean,
     accountDeleted: Boolean,
     sessionStore: SessionStore,
     onAuthRequired: () -> Unit,
     onDeleteAccount: () -> Unit
 ) {
-    val profile = sessionStore.loadedProfile?.takeIf { it.user.username == username }?.let { loaded ->
-        ProfileSummary(
-            username = loaded.user.username,
-            headline = loaded.user.bio ?: "Profil wird live aus dem Mobile Namespace geladen.",
-            jokeCount = loaded.stats.jokeCount,
-            totalScore = loaded.stats.totalScore,
-            favoriteCategory = loaded.stats.favoriteCategory,
-            averageScore = loaded.stats.averageScore,
-            favoriteCount = loaded.favorites.size
+    val profile = username?.let { requestedUsername ->
+        sessionStore.loadedProfile?.takeIf { it.user.username == requestedUsername }?.let { loaded ->
+            ProfileSummary(
+                username = loaded.user.username,
+                headline = loaded.user.bio ?: "Profil wird live aus dem Mobile Namespace geladen.",
+                jokeCount = loaded.stats.jokeCount,
+                totalScore = loaded.stats.totalScore,
+                favoriteCategory = loaded.stats.favoriteCategory,
+                averageScore = loaded.stats.averageScore,
+                favoriteCount = loaded.favorites.size
+            )
+        } ?: demoProfiles[requestedUsername] ?: ProfileSummary(
+            username = requestedUsername,
+            headline = "Profil wird aus dem Mobile Namespace gespiegelt.",
+            jokeCount = 0,
+            totalScore = 0,
+            favoriteCategory = "Noch offen",
+            averageScore = 0,
+            favoriteCount = 0
         )
-    } ?: demoProfiles[username] ?: ProfileSummary(
-        username = username,
-        headline = "Profil wird aus dem Mobile Namespace gespiegelt.",
-        jokeCount = 0,
-        totalScore = 0,
-        favoriteCategory = "Noch offen",
-        averageScore = 0,
-        favoriteCount = 0
-    )
+    }
     var showDeleteWarning by rememberSaveable(username) { mutableStateOf(false) }
 
     LaunchedEffect(username, sessionStore.accessToken) {
+        if (username == null) {
+            return@LaunchedEffect
+        }
+
         if (username == sessionStore.currentUser?.username) {
             sessionStore.loadOwnProfile()
         } else {
@@ -698,41 +704,63 @@ private fun ProfileScreen(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        ScreenHeader(title = "Profil", subtitle = profile.headline, badge = if (isOwnProfile) "Account" else "Creator")
+        if (username == null) {
+            ScreenHeader(title = "Profil", subtitle = "Ohne Login bleibt dein Feed offen, aber dein Account-Bereich startet erst nach dem Einloggen.", badge = "Gast")
+            ComicCard {
+                Text("Gastkonto aktiv", fontWeight = FontWeight.Black, fontSize = 22.sp)
+                Text(
+                    "Du kannst die App ohne Login nutzen. Für Profil, Favoriten-Sync und Kontoverwaltung brauchst du aber einen Account.",
+                    color = Comic.Muted,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            ComicCard {
+                Text("Warum einloggen?", fontWeight = FontWeight.Black)
+                Text("- Profil und Stats sehen\n- Favoriten accountgebunden speichern\n- Konto später direkt wieder löschen", color = Comic.Muted, modifier = Modifier.padding(top = 8.dp))
+            }
+            PrimaryButton("Login / Register", Icons.Filled.Login, onClick = onAuthRequired)
+            return@Column
+        }
+
+        val resolvedProfile = profile ?: return@Column
+        ScreenHeader(title = "Profil", subtitle = resolvedProfile.headline, badge = if (isOwnProfile) "Account" else "Creator")
         ComicCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.AccountCircle, null, modifier = Modifier.size(54.dp), tint = Comic.Blue)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("@${profile.username}", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    Text("${profile.favoriteCount} Favoriten · ${profile.jokeCount} Jokes", color = Comic.Muted)
+                    Text("@${resolvedProfile.username}", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                    Text("${resolvedProfile.favoriteCount} Favoriten · ${resolvedProfile.jokeCount} Jokes", color = Comic.Muted)
                 }
             }
         }
         ComicCard {
             Text("Lieblingskategorie", fontWeight = FontWeight.Black)
-            Text(profile.favoriteCategory, color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+            Text(resolvedProfile.favoriteCategory, color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
         }
         ComicCard {
             Text("Ø Score / Joke", fontWeight = FontWeight.Black)
-            Text(profile.averageScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+            Text(resolvedProfile.averageScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
         }
         ComicCard {
             Text("Gesamt-Score", fontWeight = FontWeight.Black)
-            Text(profile.totalScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+            Text(resolvedProfile.totalScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+        }
+        if (sessionStore.isLoadingProfile) {
+            Text("Profil wird geladen...", color = Comic.Muted, fontWeight = FontWeight.Black)
         }
         sessionStore.profileError?.let {
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
         if (isOwnProfile) {
             if (accountDeleted) {
-                StatusPanel("Konto gelöscht", "Demo-State: Account wurde lokal als gelöscht markiert.")
+                StatusPanel("Konto gelöscht", "Dein Account wurde über die Mobile API gelöscht und lokal aus der Session entfernt.")
             } else {
                 PrimaryButton("Konto löschen", Icons.Filled.Flag, onClick = { showDeleteWarning = !showDeleteWarning })
                 if (showDeleteWarning) {
                     ComicCard {
                         Text("Konto wirklich löschen?", fontWeight = FontWeight.Black)
-                        Text("Dieser Demo-Flow markiert den Account lokal als gelöscht.", color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+                        Text("Dieser Schritt löscht dein Konto über die Mobile API und entfernt deine Session auf diesem Gerät.", color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
                         PrimaryButton("Löschung bestätigen", Icons.Filled.Flag, onClick = onDeleteAccount)
                     }
                 }
