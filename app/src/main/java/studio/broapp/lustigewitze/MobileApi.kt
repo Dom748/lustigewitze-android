@@ -23,6 +23,7 @@ data class MobileAuthUser(
     val email: String,
     val bio: String?,
     val isGuest: Boolean,
+    val canChangeUsername: Boolean,
     val createdAt: String,
     val proSince: String?
 )
@@ -119,6 +120,22 @@ class MobileApiClient {
 
     suspend fun deleteAccount(accessToken: String) {
         request("DELETE", "/api/mobile/auth/me", accessToken = accessToken)
+    }
+
+    suspend fun updateAccount(
+        accessToken: String,
+        username: String,
+        email: String,
+        password: String? = null
+    ): MobileAuthResult {
+        val payload = JSONObject()
+            .put("username", username)
+            .put("email", email)
+        if (!password.isNullOrBlank()) {
+            payload.put("password", password)
+        }
+        val json = request("PATCH", "/api/mobile/auth/me", payload = payload, accessToken = accessToken)
+        return parseAuthResult(json)
     }
 
     suspend fun getProfile(username: String, accessToken: String?): MobileProfileResult {
@@ -218,6 +235,7 @@ class MobileApiClient {
             email = json.optString("email"),
             bio = json.optString("bio").takeIf { it.isNotBlank() },
             isGuest = json.optBoolean("isGuest", false),
+            canChangeUsername = json.optBoolean("canChangeUsername", true),
             createdAt = json.optString("createdAt"),
             proSince = json.optString("proSince").takeIf { it.isNotBlank() && it != "null" }
         )

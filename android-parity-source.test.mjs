@@ -7,6 +7,14 @@ const source = readFileSync(
   path.join(process.cwd(), "app/src/main/java/studio/broapp/lustigewitze/MainActivity.kt"),
   "utf8",
 );
+const sessionStore = readFileSync(
+  path.join(process.cwd(), "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"),
+  "utf8",
+);
+const mobileApi = readFileSync(
+  path.join(process.cwd(), "app/src/main/java/studio/broapp/lustigewitze/MobileApi.kt"),
+  "utf8",
+);
 
 test("android auth sheet gates login and registration behind terms acceptance", () => {
   assert.equal(source.includes("var acceptedTerms by rememberSaveable"), true, "AuthSheet should track accepted terms state");
@@ -25,6 +33,20 @@ test("android profile screen exposes real profile stats and direct account delet
   assert.equal(source.includes("Ø Score / Joke"), true, "ProfileScreen should surface average score stats like iOS");
   assert.equal(source.includes("Konto löschen"), true, "ProfileScreen should expose direct account deletion");
   assert.equal(source.includes("Konto wirklich löschen?"), true, "Profile deletion should warn before destructive action");
+});
+
+test("android profile lets guests upgrade and regular users edit email with one-time username change", () => {
+  assert.equal(source.includes("Gastkonto in normalen Account umwandeln"), true, "Profile should explain the guest-upgrade flow");
+  assert.equal(source.includes("Deinen Namen kannst du genau einmal ändern"), true, "Profile should explain the one-time username rule");
+  assert.equal(source.includes("Beliebig oft") || source.includes("beliebig oft aktualisieren"), true, "Profile should explain the email can be changed repeatedly");
+  assert.equal(source.includes("currentUser?.canChangeUsername"), true, "Profile should react to the server-side username-change allowance");
+  assert.equal(sessionStore.includes("suspend fun updateAccount("), true, "SessionStore should expose an account-update flow");
+  assert.equal(mobileApi.includes("suspend fun updateAccount("), true, "Mobile API client should call the PATCH /auth/me update route");
+  assert.equal(mobileApi.includes("canChangeUsername"), true, "Mobile auth user parsing should retain the username-change capability flag");
+});
+
+test("android random screen uses the new swipe-forward helper copy", () => {
+  assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should show the requested new subtitle");
 });
 
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {

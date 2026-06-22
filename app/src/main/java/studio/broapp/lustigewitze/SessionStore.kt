@@ -44,6 +44,8 @@ class SessionStore(
         private set
     var isDeletingAccount by mutableStateOf(false)
         private set
+    var isUpdatingAccount by mutableStateOf(false)
+        private set
     var isBlockingUser by mutableStateOf(false)
         private set
     private var nextFeedCursor: Int? = null
@@ -157,6 +159,27 @@ class SessionStore(
             profileError = err.message
         } finally {
             isDeletingAccount = false
+        }
+    }
+
+    suspend fun updateAccount(username: String, email: String, password: String? = null) {
+        val token = accessToken ?: return
+        isUpdatingAccount = true
+        profileError = null
+        try {
+            val result = apiClient.updateAccount(
+                accessToken = token,
+                username = username,
+                email = email,
+                password = password,
+            )
+            persistTokens(result.accessToken, result.refreshToken)
+            currentUser = result.user
+            loadProfile(result.user.username)
+        } catch (err: MobileApiException) {
+            profileError = err.fields.values.firstOrNull() ?: err.message
+        } finally {
+            isUpdatingAccount = false
         }
     }
 

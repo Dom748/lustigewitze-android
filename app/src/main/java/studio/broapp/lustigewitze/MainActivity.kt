@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
@@ -573,7 +574,7 @@ private fun RandomScreen(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ScreenHeader(title = "Zufallswitz", subtitle = "Swipe oder nutze die Buttons.", badge = "Random")
+            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
@@ -588,7 +589,7 @@ private fun RandomScreen(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        ScreenHeader(title = "Zufallswitz", subtitle = "Swipe oder nutze die Buttons.", badge = "Random")
+        ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
         blockedUserMessage?.let {
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
@@ -762,6 +763,12 @@ private fun ProfileScreen(
         )
     }
     var showDeleteWarning by rememberSaveable(username) { mutableStateOf(false) }
+    val currentUser = sessionStore.currentUser
+    var editUsername by rememberSaveable(currentUser?.id, currentUser?.username) { mutableStateOf(currentUser?.username.orEmpty()) }
+    var editEmail by rememberSaveable(currentUser?.id, currentUser?.email) { mutableStateOf(currentUser?.email.orEmpty()) }
+    var editPassword by rememberSaveable(currentUser?.id) { mutableStateOf("") }
+    var accountFormError by rememberSaveable(currentUser?.id) { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(username, sessionStore.accessToken) {
         if (username == null) {
@@ -828,6 +835,82 @@ private fun ProfileScreen(
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
         if (isOwnProfile) {
+            ComicCard {
+                Text(if (currentUser?.isGuest == true) "Gastkonto in normalen Account umwandeln" else "Daten ändern", fontWeight = FontWeight.Black, fontSize = 22.sp)
+                Text(
+                    if (currentUser?.isGuest == true) {
+                        "Hier machst du aus deinem Gastaccount einen normalen Account. Name, Mail und Passwort werden direkt übernommen."
+                    } else {
+                        "Deinen Namen kannst du genau einmal ändern. Deine Mailadresse kannst du beliebig oft aktualisieren."
+                    },
+                    color = Comic.Muted,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                OutlinedTextField(
+                    value = editUsername,
+                    onValueChange = {
+                        editUsername = it
+                        accountFormError = null
+                    },
+                    label = { Text("Name") },
+                    enabled = currentUser?.isGuest == true || currentUser?.canChangeUsername == true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                )
+                if (currentUser?.isGuest != true && currentUser?.canChangeUsername == false) {
+                    Text("Namensänderung schon verbraucht — Mail kannst du weiter ändern.", color = Comic.Muted, modifier = Modifier.padding(top = 6.dp))
+                }
+                OutlinedTextField(
+                    value = editEmail,
+                    onValueChange = {
+                        editEmail = it
+                        accountFormError = null
+                    },
+                    label = { Text("E-Mail") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                )
+                if (currentUser?.isGuest == true) {
+                    OutlinedTextField(
+                        value = editPassword,
+                        onValueChange = {
+                            editPassword = it
+                            accountFormError = null
+                        },
+                        label = { Text("Passwort") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                    )
+                }
+                accountFormError?.let {
+                    Text(it, color = Comic.Red, modifier = Modifier.padding(top = 10.dp))
+                }
+                PrimaryButton(
+                    if (sessionStore.isUpdatingAccount) "Daten werden gespeichert..." else if (currentUser?.isGuest == true) "Gastaccount speichern" else "Daten speichern",
+                    Icons.Filled.Edit,
+                    onClick = {
+                        val trimmedUsername = editUsername.trim()
+                        val trimmedEmail = editEmail.trim()
+                        val password = editPassword.trim().takeIf { currentUser?.isGuest == true && it.isNotEmpty() }
+                        accountFormError = when {
+                            trimmedUsername.length < 3 -> "Bitte gib einen Namen mit mindestens 3 Zeichen ein."
+                            trimmedEmail.isBlank() -> "Bitte gib eine E-Mail ein."
+                            currentUser?.isGuest == true && password == null -> "Bitte setze ein Passwort für den normalen Account."
+                            else -> null
+                        }
+                        if (accountFormError == null) {
+                            scope.launch {
+                                sessionStore.updateAccount(
+                                    username = trimmedUsername,
+                                    email = trimmedEmail,
+                                    password = password,
+                                )
+                                if (currentUser?.isGuest == true && sessionStore.profileError == null) {
+                                    editPassword = ""
+                                }
+                            }
+                        }
+                    },
+                    enabled = !sessionStore.isUpdatingAccount
+                )
+            }
             if (accountDeleted) {
                 StatusPanel("Konto gelöscht", "Dein Account wurde über die Mobile API gelöscht und lokal aus der Session entfernt.")
             } else {
