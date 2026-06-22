@@ -37,6 +37,7 @@ test("android profile screen exposes real profile stats and direct account delet
 
 test("android profile lets guests upgrade and regular users edit email with one-time username change", () => {
   assert.equal(source.includes("Gastkonto in normalen Account umwandeln"), true, "Profile should explain the guest-upgrade flow");
+  assert.equal(source.includes("Gastkonto umwandeln"), true, "Profile should expose a clear guest-upgrade CTA");
   assert.equal(source.includes("Deinen Namen kannst du genau einmal ändern"), true, "Profile should explain the one-time username rule");
   assert.equal(source.includes("Beliebig oft") || source.includes("beliebig oft aktualisieren"), true, "Profile should explain the email can be changed repeatedly");
   assert.equal(source.includes("currentUser?.canChangeUsername"), true, "Profile should react to the server-side username-change allowance");

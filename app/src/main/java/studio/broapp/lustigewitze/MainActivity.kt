@@ -836,10 +836,10 @@ private fun ProfileScreen(
         }
         if (isOwnProfile) {
             ComicCard {
-                Text(if (currentUser?.isGuest == true) "Gastkonto in normalen Account umwandeln" else "Daten ändern", fontWeight = FontWeight.Black, fontSize = 22.sp)
+                Text(if (currentUser?.isGuest == true) "Gastkonto in normalen Account umwandeln" else "Kontodaten ändern", fontWeight = FontWeight.Black, fontSize = 22.sp)
                 Text(
                     if (currentUser?.isGuest == true) {
-                        "Hier machst du aus deinem Gastaccount einen normalen Account. Name, Mail und Passwort werden direkt übernommen."
+                        "Hier machst du aus deinem Gastkonto einen normalen Account. Name, Mail und Passwort werden direkt übernommen."
                     } else {
                         "Deinen Namen kannst du genau einmal ändern. Deine Mailadresse kannst du beliebig oft aktualisieren."
                     },
@@ -883,7 +883,7 @@ private fun ProfileScreen(
                     Text(it, color = Comic.Red, modifier = Modifier.padding(top = 10.dp))
                 }
                 PrimaryButton(
-                    if (sessionStore.isUpdatingAccount) "Daten werden gespeichert..." else if (currentUser?.isGuest == true) "Gastaccount speichern" else "Daten speichern",
+                    if (sessionStore.isUpdatingAccount) "Daten werden gespeichert..." else if (currentUser?.isGuest == true) "Gastkonto umwandeln" else "Daten speichern",
                     Icons.Filled.Edit,
                     onClick = {
                         val trimmedUsername = editUsername.trim()
