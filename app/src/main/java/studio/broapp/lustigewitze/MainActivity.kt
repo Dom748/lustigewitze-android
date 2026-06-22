@@ -784,7 +784,7 @@ private fun ProfileScreen(
             ComicCard {
                 Text("Gastkonto aktiv", fontWeight = FontWeight.Black, fontSize = 22.sp)
                 Text(
-                    "Du kannst die App ohne Login nutzen. Für Profil, Favoriten-Sync und Kontoverwaltung brauchst du aber einen Account.",
+                    "Du kannst die App ohne Login nutzen. Für den Gastzugang musst du die Bedingungen akzeptieren und volljährig sein. Für Profil, Favoriten-Sync und Kontoverwaltung brauchst du außerdem einen Account.",
                     color = Comic.Muted,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -854,6 +854,7 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
+    var confirmedAdult by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(sessionStore.currentUser?.id) {
@@ -878,11 +879,16 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
         }
         OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Passwort") }, modifier = Modifier.fillMaxWidth())
         ComicCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
-                Column {
-                    Text("Nutzungsbedingungen / EULA", fontWeight = FontWeight.Black)
-                    Text("Ich stimme den Regeln für UGC, Moderation und Account-Nutzung zu.", color = Comic.Muted)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Nutzungsbedingungen / EULA", fontWeight = FontWeight.Black)
+                Text("Vor Login oder Registrierung akzeptierst du die Regeln für UGC, Moderation und Account-Nutzung. Für den Gastzugang gilt zusätzlich: nur volljährig.", color = Comic.Muted)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
+                    Text("Ich akzeptiere die Nutzungsbedingungen und Moderationsregeln.", color = Comic.Muted)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = confirmedAdult, onCheckedChange = { confirmedAdult = it })
+                    Text("Ich bestätige, dass ich volljährig bin.", color = Comic.Muted)
                 }
             }
         }
@@ -900,7 +906,7 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = acceptedTerms && !sessionStore.isSubmittingAuth
+            enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth
         ) {
             Text(mode, fontWeight = FontWeight.Black)
         }

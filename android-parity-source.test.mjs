@@ -10,9 +10,12 @@ const source = readFileSync(
 
 test("android auth sheet gates login and registration behind terms acceptance", () => {
   assert.equal(source.includes("var acceptedTerms by rememberSaveable"), true, "AuthSheet should track accepted terms state");
+  assert.equal(source.includes("var confirmedAdult by rememberSaveable"), true, "AuthSheet should track a separate adulthood confirmation state");
   assert.equal(source.includes("Nutzungsbedingungen / EULA"), true, "AuthSheet should show a visible terms / EULA block");
   assert.equal(source.includes("Checkbox(checked = acceptedTerms"), true, "AuthSheet should require an explicit checkbox");
-  assert.equal(source.includes("enabled = acceptedTerms"), true, "Auth submit should stay disabled until terms are accepted");
+  assert.equal(source.includes("Checkbox(checked = confirmedAdult"), true, "AuthSheet should require an explicit legal-age checkbox");
+  assert.equal(source.includes("Ich bestätige, dass ich volljährig bin."), true, "AuthSheet should visibly mention the legal-age confirmation");
+  assert.equal(source.includes("enabled = acceptedTerms && confirmedAdult"), true, "Auth submit should stay disabled until terms and legal-age confirmation are accepted");
 });
 
 test("android profile screen exposes real profile stats and direct account deletion", () => {
