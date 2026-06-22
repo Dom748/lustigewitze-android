@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -114,6 +115,16 @@ private data class Joke(
 
 private data class Comment(val author: String, val content: String)
 
+private data class ProfileSummary(
+    val username: String,
+    val headline: String,
+    val jokeCount: Int,
+    val totalScore: Int,
+    val favoriteCategory: String,
+    val averageScore: Int,
+    val favoriteCount: Int
+)
+
 private const val LONG_JOKE_CATEGORY = "Lange Witze"
 private const val AUTO_LONG_JOKE_THRESHOLD = 500
 private const val STANDARD_JOKE_MAX_CHARS = 600
@@ -152,6 +163,54 @@ private val demoJokes = listOf(
 private val demoComments = listOf(
     Comment("ehrenotto", "Bro der war stark."),
     Comment("lachflash", "Der Stack-Witz landet direkt in Favoriten.")
+)
+
+private val demoProfiles = mapOf(
+    "pointenpaule" to ProfileSummary(
+        username = "pointenpaule",
+        headline = "Feed lesen, liefern und Favoriten sammeln.",
+        jokeCount = 34,
+        totalScore = 421,
+        favoriteCategory = "Tech",
+        averageScore = 12,
+        favoriteCount = 24
+    ),
+    "deadline_dieter" to ProfileSummary(
+        username = "deadline_dieter",
+        headline = "Arbeitswitze mit stabilem Punch.",
+        jokeCount = 22,
+        totalScore = 317,
+        favoriteCategory = "Arbeit",
+        averageScore = 14,
+        favoriteCount = 11
+    ),
+    "sofaprofi" to ProfileSummary(
+        username = "sofaprofi",
+        headline = "Alltag, Sofa und maximal relatable.",
+        jokeCount = 18,
+        totalScore = 284,
+        favoriteCategory = "Alltag",
+        averageScore = 15,
+        favoriteCount = 9
+    ),
+    "ehrenotto" to ProfileSummary(
+        username = "ehrenotto",
+        headline = "Kommentiert alles, was knallt.",
+        jokeCount = 6,
+        totalScore = 59,
+        favoriteCategory = "Alltag",
+        averageScore = 10,
+        favoriteCount = 3
+    ),
+    "lachflash" to ProfileSummary(
+        username = "lachflash",
+        headline = "Favoritenjäger mit Tech-Faible.",
+        jokeCount = 4,
+        totalScore = 41,
+        favoriteCategory = "Tech",
+        averageScore = 10,
+        favoriteCount = 5
+    )
 )
 
 private object Comic {
@@ -205,8 +264,14 @@ private fun LustigeWitzeApp() {
 private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     var selectedTab by rememberSaveable { mutableStateOf(Tab.Feed) }
     var selectedJoke by remember { mutableStateOf<Joke?>(null) }
+    var selectedProfileUsername by rememberSaveable { mutableStateOf<String?>(null) }
+    var blockedAuthors by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var blockedUserMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var showAuth by rememberSaveable { mutableStateOf(false) }
     var showComposer by rememberSaveable { mutableStateOf(false) }
+    var accountDeleted by rememberSaveable { mutableStateOf(false) }
+
+    val visibleJokes = demoJokes.filterNot { blockedAuthors.contains(it.author) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -248,17 +313,66 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding).fillMaxSize()) {
             when (selectedTab) {
-                Tab.Feed -> FeedScreen(onOpenJoke = { selectedJoke = it }, onAuthRequired = { showAuth = true })
-                Tab.Random -> RandomScreen(onOpenJoke = { selectedJoke = it }, onAuthRequired = { showAuth = true })
-                Tab.Leaderboard -> LeaderboardScreen()
-                Tab.Profile -> ProfileScreen(onAuthRequired = { showAuth = true })
+                Tab.Feed -> FeedScreen(
+                    jokes = visibleJokes,
+                    blockedUserMessage = blockedUserMessage,
+                    onOpenJoke = { selectedJoke = it },
+                    onOpenProfile = { selectedProfileUsername = it },
+                    onAuthRequired = { showAuth = true }
+                )
+                Tab.Random -> RandomScreen(
+                    jokes = visibleJokes,
+                    blockedUserMessage = blockedUserMessage,
+                    onOpenJoke = { selectedJoke = it },
+                    onOpenProfile = { selectedProfileUsername = it },
+                    onAuthRequired = { showAuth = true }
+                )
+                Tab.Leaderboard -> LeaderboardScreen(
+                    blockedAuthors = blockedAuthors,
+                    onOpenProfile = { selectedProfileUsername = it }
+                )
+                Tab.Profile -> ProfileScreen(
+                    username = "pointenpaule",
+                    isOwnProfile = true,
+                    accountDeleted = accountDeleted,
+                    onAuthRequired = { showAuth = true },
+                    onDeleteAccount = { accountDeleted = true }
+                )
             }
         }
     }
 
     selectedJoke?.let { joke ->
         ModalBottomSheet(onDismissRequest = { selectedJoke = null }) {
-            DetailScreen(joke = joke, onBack = { selectedJoke = null }, onAuthRequired = { showAuth = true })
+            DetailScreen(
+                joke = joke,
+                blockedAuthors = blockedAuthors,
+                onBack = { selectedJoke = null },
+                onOpenProfile = { selectedProfileUsername = it },
+                onAuthRequired = { showAuth = true },
+                onBlockAuthor = { author ->
+                    blockedAuthors = (blockedAuthors + author).distinct()
+                    blockedUserMessage = "blocked_user:$author"
+                    selectedJoke = null
+                    selectedProfileUsername = null
+                    selectedTab = Tab.Feed
+                }
+            )
+        }
+    }
+
+    selectedProfileUsername?.let { username ->
+        ModalBottomSheet(onDismissRequest = { selectedProfileUsername = null }) {
+            ProfileScreen(
+                username = username,
+                isOwnProfile = username == "pointenpaule",
+                accountDeleted = accountDeleted,
+                onAuthRequired = { showAuth = true },
+                onDeleteAccount = {
+                    accountDeleted = true
+                    selectedProfileUsername = null
+                }
+            )
         }
     }
 
@@ -276,7 +390,13 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
 }
 
 @Composable
-private fun FeedScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit) {
+private fun FeedScreen(
+    jokes: List<Joke>,
+    blockedUserMessage: String?,
+    onOpenJoke: (Joke) -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onAuthRequired: () -> Unit
+) {
     var sort by rememberSaveable { mutableStateOf("Neu") }
     var category by rememberSaveable { mutableStateOf("Alle") }
     val categories = listOf("Alle", "Alltag", "Tech", "Arbeit", LONG_JOKE_CATEGORY, "Familie")
@@ -288,6 +408,9 @@ private fun FeedScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit) {
     ) {
         item {
             ScreenHeader(title = "LustigeWitze", subtitle = "Feed lesen, bewerten und merken.", badge = "Feed")
+            blockedUserMessage?.let {
+                Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
                 Segment("Neu", selected = sort == "Neu") { sort = "Neu" }
                 Segment("Top", selected = sort == "Top") { sort = "Top" }
@@ -299,8 +422,19 @@ private fun FeedScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit) {
             }
         }
 
-        items(demoJokes) { joke ->
-            FeedSwipeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onAuthRequired = onAuthRequired)
+        if (jokes.isEmpty()) {
+            item {
+                StatusPanel("Feed bereinigt", "Alle aktuell sichtbaren Witze stammen von blockierten Usern.")
+            }
+        } else {
+            items(jokes) { joke ->
+                FeedSwipeCard(
+                    joke = joke,
+                    onOpen = { onOpenJoke(joke) },
+                    onOpenProfile = onOpenProfile,
+                    onAuthRequired = onAuthRequired
+                )
+            }
         }
 
         item {
@@ -313,18 +447,42 @@ private fun FeedScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit) {
 }
 
 @Composable
-private fun RandomScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit) {
+private fun RandomScreen(
+    jokes: List<Joke>,
+    blockedUserMessage: String?,
+    onOpenJoke: (Joke) -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onAuthRequired: () -> Unit
+) {
     var currentIndex by rememberSaveable { mutableStateOf(0) }
     var undoIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     var dragX by remember { mutableFloatStateOf(0f) }
     val haptics = LocalHapticFeedback.current
-    val joke = demoJokes[currentIndex % demoJokes.size]
+
+    if (jokes.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            ScreenHeader(title = "Zufallswitz", subtitle = "Swipe oder nutze die Buttons.", badge = "Random")
+            blockedUserMessage?.let {
+                Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+            }
+            StatusPanel("Random bereinigt", "Aktuell sind keine nicht blockierten Witze mehr sichtbar.")
+        }
+        return
+    }
+
+    val joke = jokes[currentIndex % jokes.size]
 
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         ScreenHeader(title = "Zufallswitz", subtitle = "Swipe oder nutze die Buttons.", badge = "Random")
+        blockedUserMessage?.let {
+            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+        }
 
         Box(
             modifier = Modifier
@@ -344,7 +502,7 @@ private fun RandomScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit)
                 }
                 .rotate(dragX / 40f)
         ) {
-            JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onAuthRequired = onAuthRequired)
+            JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
@@ -380,7 +538,16 @@ private fun RandomScreen(onOpenJoke: (Joke) -> Unit, onAuthRequired: () -> Unit)
 }
 
 @Composable
-private fun DetailScreen(joke: Joke, onBack: () -> Unit, onAuthRequired: () -> Unit) {
+private fun DetailScreen(
+    joke: Joke,
+    blockedAuthors: List<String>,
+    onBack: () -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onAuthRequired: () -> Unit,
+    onBlockAuthor: (String) -> Unit
+) {
+    val visibleComments = demoComments.filterNot { blockedAuthors.contains(it.author) }
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -391,15 +558,18 @@ private fun DetailScreen(joke: Joke, onBack: () -> Unit, onAuthRequired: () -> U
             }
             Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 22.sp)
         }
-        JokeCard(joke = joke, onOpen = {}, onAuthRequired = onAuthRequired)
+        JokeCard(joke = joke, onOpen = {}, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ComicAction("Teilen", Icons.Filled.Share, Comic.Blue, Modifier.weight(1f)) {}
             ComicAction("Report", Icons.Filled.Flag, Comic.Pink, Modifier.weight(1f)) { onAuthRequired() }
+            ComicAction("User blockieren", Icons.Filled.Person, Comic.Yellow, Modifier.weight(1f)) { onBlockAuthor(joke.author) }
         }
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
-        demoComments.forEach { comment ->
+        visibleComments.forEach { comment ->
             ComicCard {
-                Text("@${comment.author}", fontWeight = FontWeight.Black)
+                TextButton(onClick = { onOpenProfile(comment.author) }) {
+                    Text("@${comment.author}", fontWeight = FontWeight.Black)
+                }
                 Text(comment.content, modifier = Modifier.padding(top = 4.dp))
             }
         }
@@ -415,8 +585,9 @@ private fun DetailScreen(joke: Joke, onBack: () -> Unit, onAuthRequired: () -> U
 }
 
 @Composable
-private fun LeaderboardScreen() {
+private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (String) -> Unit) {
     val rows = listOf("pointenpaule" to 421, "deadline_dieter" to 317, "sofaprofi" to 284)
+        .filterNot { blockedAuthors.contains(it.first) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -437,7 +608,9 @@ private fun LeaderboardScreen() {
                     Icon(Icons.Filled.EmojiEvents, null, tint = Comic.Orange)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("@$name", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                        TextButton(onClick = { onOpenProfile(name) }) {
+                            Text("@$name", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                        }
                         Text("$score Punkte", color = Comic.Muted)
                     }
                     ScoreBadge(score)
@@ -448,30 +621,74 @@ private fun LeaderboardScreen() {
 }
 
 @Composable
-private fun ProfileScreen(onAuthRequired: () -> Unit) {
+private fun ProfileScreen(
+    username: String,
+    isOwnProfile: Boolean,
+    accountDeleted: Boolean,
+    onAuthRequired: () -> Unit,
+    onDeleteAccount: () -> Unit
+) {
+    val profile = demoProfiles[username] ?: ProfileSummary(
+        username = username,
+        headline = "Profil wird aus dem Mobile Namespace gespiegelt.",
+        jokeCount = 0,
+        totalScore = 0,
+        favoriteCategory = "Noch offen",
+        averageScore = 0,
+        favoriteCount = 0
+    )
+    var showDeleteWarning by rememberSaveable(username) { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        ScreenHeader(title = "Profil", subtitle = "Session, Favoriten und eigene Aktivitaet.", badge = "Account")
+        ScreenHeader(title = "Profil", subtitle = profile.headline, badge = if (isOwnProfile) "Account" else "Creator")
         ComicCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.AccountCircle, null, modifier = Modifier.size(54.dp), tint = Comic.Blue)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Gastmodus", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    Text("Lesen ist frei. Interaktionen oeffnen Login/Register.", color = Comic.Muted)
+                    Text("@${profile.username}", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                    Text("${profile.favoriteCount} Favoriten · ${profile.jokeCount} Jokes", color = Comic.Muted)
                 }
             }
         }
-        PrimaryButton("Login / Register", Icons.Filled.Login, onClick = onAuthRequired)
-        StatusPanel("Offene API-Abhaengigkeit", "Profil liest spaeter /api/mobile/auth/me und Favoriten aus dem Mobile Namespace.")
+        ComicCard {
+            Text("Lieblingskategorie", fontWeight = FontWeight.Black)
+            Text(profile.favoriteCategory, color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+        }
+        ComicCard {
+            Text("Ø Score / Joke", fontWeight = FontWeight.Black)
+            Text(profile.averageScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+        }
+        ComicCard {
+            Text("Gesamt-Score", fontWeight = FontWeight.Black)
+            Text(profile.totalScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+        }
+        if (isOwnProfile) {
+            if (accountDeleted) {
+                StatusPanel("Konto gelöscht", "Demo-State: Account wurde lokal als gelöscht markiert.")
+            } else {
+                PrimaryButton("Konto löschen", Icons.Filled.Flag, onClick = { showDeleteWarning = !showDeleteWarning })
+                if (showDeleteWarning) {
+                    ComicCard {
+                        Text("Konto wirklich löschen?", fontWeight = FontWeight.Black)
+                        Text("Dieser Demo-Flow markiert den Account lokal als gelöscht.", color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
+                        PrimaryButton("Löschung bestätigen", Icons.Filled.Flag, onClick = onDeleteAccount)
+                    }
+                }
+            }
+        } else {
+            PrimaryButton("Login / Register", Icons.Filled.Login, onClick = onAuthRequired)
+        }
     }
 }
 
 @Composable
 private fun AuthSheet(onDone: () -> Unit) {
     var mode by rememberSaveable { mutableStateOf("Login") }
+    var acceptedTerms by rememberSaveable { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxWidth().padding(18.dp).windowInsetsPadding(WindowInsets.navigationBars),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -486,7 +703,18 @@ private fun AuthSheet(onDone: () -> Unit) {
             OutlinedTextField(value = "", onValueChange = {}, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
         }
         OutlinedTextField(value = "", onValueChange = {}, label = { Text("Passwort") }, modifier = Modifier.fillMaxWidth())
-        PrimaryButton(mode, Icons.Filled.Login, onClick = onDone)
+        ComicCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
+                Column {
+                    Text("Nutzungsbedingungen / EULA", fontWeight = FontWeight.Black)
+                    Text("Ich stimme den Regeln für UGC, Moderation und Account-Nutzung zu.", color = Comic.Muted)
+                }
+            }
+        }
+        Button(onClick = onDone, modifier = Modifier.fillMaxWidth(), enabled = acceptedTerms) {
+            Text(mode, fontWeight = FontWeight.Black)
+        }
     }
 }
 
@@ -543,7 +771,7 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
 }
 
 @Composable
-private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onAuthRequired: () -> Unit) {
+private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> Unit, onAuthRequired: () -> Unit) {
     var dragX by remember { mutableFloatStateOf(0f) }
     var dragY by remember { mutableFloatStateOf(0f) }
     var viewerVote by rememberSaveable(joke.id) { mutableStateOf(joke.viewerVote) }
@@ -587,6 +815,7 @@ private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onAuthRequired: () -> 
             JokeCard(
                 joke = joke.copy(score = score, viewerVote = viewerVote),
                 onOpen = onOpen,
+                onOpenProfile = onOpenProfile,
                 onAuthRequired = onAuthRequired
             )
             feedbackLabel?.let { label ->
@@ -641,7 +870,7 @@ private fun SwipeVoteBadge(label: String, icon: ImageVector, color: Color, modif
 }
 
 @Composable
-private fun JokeCard(joke: Joke, onOpen: () -> Unit, onAuthRequired: () -> Unit) {
+private fun JokeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> Unit, onAuthRequired: () -> Unit) {
     ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Pill(joke.category, Comic.Yellow)
@@ -655,14 +884,16 @@ private fun JokeCard(joke: Joke, onOpen: () -> Unit, onAuthRequired: () -> Unit)
             lineHeight = 28.sp,
             modifier = Modifier.padding(top = 14.dp)
         )
-        Text(
-            "von @${joke.author}",
-            color = Comic.Muted,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 10.dp)
-        )
+        TextButton(onClick = { onOpenProfile(joke.author) }) {
+            Text(
+                "von @${joke.author}",
+                color = Comic.Muted,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
             ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.weight(1f), onAuthRequired)
             ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.weight(1f), onAuthRequired)
