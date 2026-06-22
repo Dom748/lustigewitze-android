@@ -66,10 +66,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,6 +81,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -126,10 +129,10 @@ private data class ProfileSummary(
 )
 
 private const val LONG_JOKE_CATEGORY = "Lange Witze"
-private const val AUTO_LONG_JOKE_THRESHOLD = 500
-private const val STANDARD_JOKE_MAX_CHARS = 600
-private const val LONG_JOKE_MAX_CHARS = 3000
-private const val LONG_JOKE_LENGTH_ERROR = "Witze über 600 Zeichen brauchen die Kategorie Lange Witze."
+private const val AUTO_LONG_JOKE_THRESHOLD = 420
+private const val STANDARD_JOKE_MAX_CHARS = 420
+private const val LONG_JOKE_MAX_CHARS = 2500
+private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden automatisch als Lange Witze gespeichert."
 
 private val demoJokes = listOf(
     Joke(
@@ -727,7 +730,7 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
     val currentLimit = if (selectedCategory == LONG_JOKE_CATEGORY) LONG_JOKE_MAX_CHARS else STANDARD_JOKE_MAX_CHARS
     val lengthErrorMessage = when {
         selectedCategory != LONG_JOKE_CATEGORY && trimmedText.length > STANDARD_JOKE_MAX_CHARS -> LONG_JOKE_LENGTH_ERROR
-        selectedCategory == LONG_JOKE_CATEGORY && trimmedText.length > LONG_JOKE_MAX_CHARS -> "Lange Witze dürfen höchstens 3000 Zeichen haben."
+        selectedCategory == LONG_JOKE_CATEGORY && trimmedText.length > LONG_JOKE_MAX_CHARS -> "Lange Witze dürfen höchstens 2500 Zeichen haben."
         else -> null
     }
 
@@ -735,15 +738,15 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(18.dp).windowInsetsPadding(WindowInsets.navigationBars),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ScreenHeader(title = "Neuer Witz", subtitle = "Witze ab 501 Zeichen wandern automatisch in Lange Witze.", badge = "Neu")
+        ScreenHeader(title = "Neuer Witz", subtitle = "Witze ab 421 Zeichen wandern automatisch in Lange Witze.", badge = "Neu")
         OutlinedTextField(
             value = text,
             onValueChange = {
                 text = it.take(LONG_JOKE_MAX_CHARS)
-                if (text.trim().length > 500 && !hasAutoSelectedLongJokes && selectedCategory != LONG_JOKE_CATEGORY) {
+                if (text.trim().length > AUTO_LONG_JOKE_THRESHOLD && !hasAutoSelectedLongJokes && selectedCategory != LONG_JOKE_CATEGORY) {
                     selectedCategory = "Lange Witze"
                     hasAutoSelectedLongJokes = true
-                } else if (text.trim().length <= 500) {
+                } else if (text.trim().length <= AUTO_LONG_JOKE_THRESHOLD) {
                     hasAutoSelectedLongJokes = false
                 }
             },
@@ -753,7 +756,7 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
         )
         Text("${trimmedText.length} / $currentLimit Zeichen", color = Comic.Muted, fontWeight = FontWeight.Bold)
         if (trimmedText.length > AUTO_LONG_JOKE_THRESHOLD && selectedCategory == LONG_JOKE_CATEGORY) {
-            Text("Ab 501 Zeichen wird dein Witz automatisch als Lange Witze einsortiert.", color = Comic.Ink, fontWeight = FontWeight.Bold)
+            Text("Ab 421 Zeichen wird dein Witz automatisch als Lange Witze einsortiert.", color = Comic.Ink, fontWeight = FontWeight.Bold)
         }
         lengthErrorMessage?.let {
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
