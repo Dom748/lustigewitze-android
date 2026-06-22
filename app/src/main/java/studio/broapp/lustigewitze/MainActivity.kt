@@ -110,12 +110,15 @@ private data class Joke(
     val id: String,
     val content: String,
     val category: String,
-    val author: String,
+    val authorId: String,
+    val authorUsername: String,
     val score: Int,
     val favoriteCount: Int,
     val viewerVote: Int? = null,
     val viewerFavorite: Boolean = false
 )
+
+private data class FeedCategoryOption(val label: String, val apiValue: String)
 
 private data class Comment(val author: String, val content: String)
 
@@ -140,7 +143,8 @@ private val demoJokes = listOf(
         id = "1",
         content = "Warum nehmen Entwickler nie die Treppe? Weil sie lieber den Stack benutzen.",
         category = "Tech",
-        author = "pointenpaule",
+        authorId = "pointenpaule",
+        authorUsername = "pointenpaule",
         score = 128,
         favoriteCount = 24,
         viewerVote = 1,
@@ -150,7 +154,8 @@ private val demoJokes = listOf(
         id = "2",
         content = "Mein Kalender ist so voll, selbst meine Pausen brauchen jetzt Termine.",
         category = "Arbeit",
-        author = "deadline_dieter",
+        authorId = "deadline_dieter",
+        authorUsername = "deadline_dieter",
         score = 87,
         favoriteCount = 11
     ),
@@ -158,7 +163,8 @@ private val demoJokes = listOf(
         id = "3",
         content = "Ich wollte heute produktiv sein. Dann hat mein Sofa 'nur fuenf Minuten' gesagt.",
         category = "Alltag",
-        author = "sofaprofi",
+        authorId = "sofaprofi",
+        authorUsername = "sofaprofi",
         score = 64,
         favoriteCount = 9
     )
@@ -216,6 +222,29 @@ private val demoProfiles = mapOf(
         favoriteCount = 5
     )
 )
+
+private val feedCategoryOptions = listOf(
+    FeedCategoryOption("Alle", "all"),
+    FeedCategoryOption("Alltag", "alltag"),
+    FeedCategoryOption("Tech", "tech"),
+    FeedCategoryOption("Arbeit", "arbeit"),
+    FeedCategoryOption(LONG_JOKE_CATEGORY, "lange-witze"),
+    FeedCategoryOption("Familie", "familie")
+)
+
+private fun MobileJoke.toAppJoke(): Joke {
+    return Joke(
+        id = id,
+        content = content,
+        category = category.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+        authorId = author.id,
+        authorUsername = author.username,
+        score = score,
+        favoriteCount = favoriteCount,
+        viewerVote = viewerVote,
+        viewerFavorite = viewerFavorite
+    )
+}
 
 private object Comic {
     val Ink = Color(0xFF1A1714)
@@ -277,11 +306,17 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     var showAuth by rememberSaveable { mutableStateOf(false) }
     var showComposer by rememberSaveable { mutableStateOf(false) }
     var accountDeleted by rememberSaveable { mutableStateOf(false) }
+    var feedSort by rememberSaveable { mutableStateOf("latest") }
+    var feedCategory by rememberSaveable { mutableStateOf("all") }
 
     LaunchedEffect(sessionStore.accessToken) {
         if (!sessionStore.accessToken.isNullOrBlank()) {
             sessionStore.loadOwnProfile()
         }
+    }
+
+    LaunchedEffect(feedSort, feedCategory, sessionStore.accessToken) {
+        sessionStore.loadFeed(sort = feedSort, category = feedCategory)
     }
 
     LaunchedEffect(sessionStore.blockMessage) {
@@ -296,7 +331,11 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         }
     }
 
-    val visibleJokes = demoJokes.filterNot { blockedAuthors.contains(it.author) }
+    val visibleJokes = (if (sessionStore.hasLoadedFeed) {
+        sessionStore.feedItems.map { it.toAppJoke() }
+    } else {
+        demoJokes
+    }).filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -341,6 +380,16 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 Tab.Feed -> FeedScreen(
                     jokes = visibleJokes,
                     blockedUserMessage = blockedUserMessage,
+                    selectedSort = feedSort,
+                    selectedCategory = feedCategory,
+                    isLoadingFeed = sessionStore.isLoadingFeed,
+                    isLoadingMoreFeed = sessionStore.isLoadingMoreFeed,
+                    feedError = sessionStore.feedError,
+                    canLoadMoreFeed = sessionStore.canLoadMoreFeed,
+                    onSelectSort = { feedSort = it },
+                    onSelectCategory = { feedCategory = it },
+                    onRefresh = { scope.launch { sessionStore.loadFeed(sort = feedSort, category = feedCategory) } },
+                    onLoadMore = { scope.launch { sessionStore.loadMoreFeed(sort = feedSort, category = feedCategory) } },
                     onOpenJoke = { selectedJoke = it },
                     onOpenProfile = { selectedProfileUsername = it },
                     onAuthRequired = { showAuth = true }
@@ -381,11 +430,11 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 onBack = { selectedJoke = null },
                 onOpenProfile = { selectedProfileUsername = it },
                 onAuthRequired = { showAuth = true },
-                onBlockAuthor = { author ->
+                onBlockAuthor = { authorId, authorUsername ->
                     scope.launch {
-                        val blocked = sessionStore.blockAuthorAndReport(authorId = author, jokeId = joke.id)
+                        val blocked = sessionStore.blockAuthorAndReport(authorId = authorId, jokeId = joke.id)
                         if (blocked) {
-                            blockedAuthors = (blockedAuthors + author).distinct()
+                            blockedAuthors = (blockedAuthors + listOf(authorId, authorUsername)).distinct()
                         }
                     }
                 }
@@ -429,14 +478,20 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
 private fun FeedScreen(
     jokes: List<Joke>,
     blockedUserMessage: String?,
+    selectedSort: String,
+    selectedCategory: String,
+    isLoadingFeed: Boolean,
+    isLoadingMoreFeed: Boolean,
+    feedError: String?,
+    canLoadMoreFeed: Boolean,
+    onSelectSort: (String) -> Unit,
+    onSelectCategory: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
     onOpenJoke: (Joke) -> Unit,
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit
 ) {
-    var sort by rememberSaveable { mutableStateOf("Neu") }
-    var category by rememberSaveable { mutableStateOf("Alle") }
-    val categories = listOf("Alle", "Alltag", "Tech", "Arbeit", LONG_JOKE_CATEGORY, "Familie")
-
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
@@ -447,20 +502,32 @@ private fun FeedScreen(
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
+            feedError?.let {
+                Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-                Segment("Neu", selected = sort == "Neu") { sort = "Neu" }
-                Segment("Top", selected = sort == "Top") { sort = "Top" }
+                Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
+                Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
+                Segment("Reload", selected = false, onClick = onRefresh)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-                categories.take(4).forEach { item ->
-                    Segment(item, selected = category == item) { category = item }
+                feedCategoryOptions.take(4).forEach { option ->
+                    Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
                 }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+                feedCategoryOptions.drop(4).forEach { option ->
+                    Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
+                }
+            }
+            if (isLoadingFeed) {
+                StatusPanel("Feed lädt", "Android zieht jetzt echte Witze von /api/mobile/feed.")
             }
         }
 
-        if (jokes.isEmpty()) {
+        if (!isLoadingFeed && jokes.isEmpty()) {
             item {
-                StatusPanel("Feed bereinigt", "Alle aktuell sichtbaren Witze stammen von blockierten Usern.")
+                StatusPanel("Feed leer", "Aktuell sind keine Witze für diesen Filter sichtbar.")
             }
         } else {
             items(jokes) { joke ->
@@ -474,10 +541,16 @@ private fun FeedScreen(
         }
 
         item {
-            StatusPanel(
-                title = "Pagination bereit",
-                message = "Naechster Schritt: API-Client an /api/mobile/feed mit cursor anbinden."
-            )
+            when {
+                isLoadingMoreFeed -> StatusPanel("Mehr Feed lädt", "Nächste Seite wird gerade über den Cursor geladen.")
+                canLoadMoreFeed -> ComicCard {
+                    Text("Mehr laden", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                    Text("Cursor ist vorhanden — lade die nächste Feed-Seite.", color = Comic.Muted, modifier = Modifier.padding(top = 8.dp))
+                    Spacer(Modifier.height(12.dp))
+                    PrimaryButton("Mehr laden", Icons.Filled.Refresh, onClick = onLoadMore)
+                }
+                else -> StatusPanel("Feed live", "Android nutzt /api/mobile/feed ohne lokale Demo-Pagination.")
+            }
         }
     }
 }
@@ -580,7 +653,7 @@ private fun DetailScreen(
     onBack: () -> Unit,
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit,
-    onBlockAuthor: (String) -> Unit
+    onBlockAuthor: (String, String) -> Unit
 ) {
     val visibleComments = demoComments.filterNot { blockedAuthors.contains(it.author) }
 
@@ -598,7 +671,9 @@ private fun DetailScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ComicAction("Teilen", Icons.Filled.Share, Comic.Blue, Modifier.weight(1f)) {}
             ComicAction("Report", Icons.Filled.Flag, Comic.Pink, Modifier.weight(1f)) { onAuthRequired() }
-            ComicAction("User blockieren", Icons.Filled.Person, Comic.Yellow, Modifier.weight(1f)) { onBlockAuthor(joke.author) }
+            ComicAction("User blockieren", Icons.Filled.Person, Comic.Yellow, Modifier.weight(1f)) {
+                onBlockAuthor(joke.authorId, joke.authorUsername)
+            }
         }
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
         visibleComments.forEach { comment ->
@@ -998,9 +1073,9 @@ private fun JokeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> 
             lineHeight = 28.sp,
             modifier = Modifier.padding(top = 14.dp)
         )
-        TextButton(onClick = { onOpenProfile(joke.author) }) {
+        TextButton(onClick = { onOpenProfile(joke.authorUsername) }) {
             Text(
-                "von @${joke.author}",
+                "von @${joke.authorUsername}",
                 color = Comic.Muted,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,

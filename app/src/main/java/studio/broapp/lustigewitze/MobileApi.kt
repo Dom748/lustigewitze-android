@@ -52,7 +52,15 @@ data class MobileJoke(
     val author: MobileJokeAuthor,
     val score: Int,
     val favoriteCount: Int,
-    val viewerVote: Int?
+    val legendCount: Int,
+    val viewerVote: Int?,
+    val viewerFavorite: Boolean,
+    val createdAt: String
+)
+
+data class MobileFeedResult(
+    val items: List<MobileJoke>,
+    val nextCursor: Int?
 )
 
 data class MobileProfileResult(
@@ -84,6 +92,24 @@ class MobileApiClient {
             .put("password", password)
         val json = request("POST", "/api/mobile/auth/register", payload = payload)
         return parseAuthResult(json)
+    }
+
+    suspend fun getFeed(
+        sort: String = "latest",
+        category: String = "all",
+        cursor: Int? = null,
+        accessToken: String? = null
+    ): MobileFeedResult {
+        val query = buildList {
+            add("sort=${URLEncoder.encode(sort, Charsets.UTF_8.name())}")
+            add("category=${URLEncoder.encode(category, Charsets.UTF_8.name())}")
+            cursor?.let { add("cursor=$it") }
+        }.joinToString("&")
+        val json = request("GET", "/api/mobile/feed?$query", accessToken = accessToken)
+        return MobileFeedResult(
+            items = parseJokes(json.optJSONArray("items")),
+            nextCursor = json.optInt("nextCursor").takeIf { !json.isNull("nextCursor") }
+        )
     }
 
     suspend fun getCurrentUser(accessToken: String): MobileAuthUser {
@@ -223,7 +249,10 @@ class MobileApiClient {
                         ),
                         score = item.optInt("score", 0),
                         favoriteCount = item.optInt("favoriteCount", 0),
-                        viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") }
+                        legendCount = item.optInt("legendCount", 0),
+                        viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") },
+                        viewerFavorite = item.optBoolean("viewerFavorite", false),
+                        createdAt = item.optString("createdAt")
                     )
                 )
             }

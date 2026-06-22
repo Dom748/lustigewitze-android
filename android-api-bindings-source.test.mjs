@@ -8,12 +8,15 @@ const mainActivity = readFileSync(path.join(root, "app/src/main/java/studio/broa
 const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/MobileApi.kt"), "utf8");
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 
-test("android ships a first-party mobile api client for auth profile and block flows", () => {
+test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
   assert.match(apiClient, /private const val MOBILE_API_BASE_URL = "https:\/\/api\.lustigewitze\.fun"/);
   assert.match(apiClient, /suspend fun login\(/);
   assert.match(apiClient, /"\/api\/mobile\/auth\/login"/);
   assert.match(apiClient, /suspend fun register\(/);
   assert.match(apiClient, /"\/api\/mobile\/auth\/register"/);
+  assert.match(apiClient, /suspend fun getFeed\(/);
+  assert.match(apiClient, /request\("GET", "\/api\/mobile\/feed\?\$query"/);
+  assert.match(apiClient, /MobileFeedResult\(/);
   assert.match(apiClient, /suspend fun getCurrentUser\(/);
   assert.match(apiClient, /"\/api\/mobile\/auth\/me"/);
   assert.match(apiClient, /suspend fun deleteAccount\(/);
@@ -29,22 +32,29 @@ test("android persists session tokens and exposes async auth account helpers", (
   assert.match(sessionStore, /SharedPreferences/);
   assert.match(sessionStore, /var accessToken by mutableStateOf/);
   assert.match(sessionStore, /var refreshToken by mutableStateOf/);
+  assert.match(sessionStore, /var feedItems by mutableStateOf<List<MobileJoke>>\(emptyList\(\)\)/);
+  assert.match(sessionStore, /var canLoadMoreFeed by mutableStateOf\(false\)/);
   assert.match(sessionStore, /suspend fun login\(/);
   assert.match(sessionStore, /suspend fun register\(/);
   assert.match(sessionStore, /suspend fun loadOwnProfile\(/);
   assert.match(sessionStore, /suspend fun loadProfile\(/);
+  assert.match(sessionStore, /suspend fun loadFeed\(sort: String, category: String\)/);
+  assert.match(sessionStore, /suspend fun loadMoreFeed\(sort: String, category: String\)/);
+  assert.match(sessionStore, /apiClient\.getFeed\(sort = sort, category = category/);
   assert.match(sessionStore, /suspend fun deleteAccount\(/);
   assert.match(sessionStore, /suspend fun blockAuthorAndReport\(/);
 });
 
 test("android ui is wired to the real session store instead of local demo-only account actions", () => {
   assert.match(mainActivity, /val sessionStore = remember \{ SessionStore\(/);
+  assert.match(mainActivity, /LaunchedEffect\(feedSort, feedCategory, sessionStore\.accessToken\) \{[\s\S]*sessionStore\.loadFeed\(sort = feedSort, category = feedCategory\)/);
   assert.match(mainActivity, /AuthSheet\(sessionStore = sessionStore/);
   assert.match(mainActivity, /ProfileScreen\([\s\S]*sessionStore = sessionStore/);
   assert.match(mainActivity, /sessionStore\.blockAuthorAndReport\(/);
   assert.match(mainActivity, /sessionStore\.deleteAccount\(/);
   assert.match(mainActivity, /sessionStore\.loadProfile\(/);
   assert.match(mainActivity, /sessionStore\.loadOwnProfile\(/);
+  assert.match(mainActivity, /sessionStore\.loadMoreFeed\(sort = feedSort, category = feedCategory\)/);
 });
 
 test("android guest profile no longer fakes a logged-in pointenpaule account", () => {
@@ -52,6 +62,16 @@ test("android guest profile no longer fakes a logged-in pointenpaule account", (
   assert.match(mainActivity, /if \(username == null\) \{[\s\S]*badge = "Gast"/);
   assert.match(mainActivity, /Text\("Gastkonto aktiv"/);
   assert.match(mainActivity, /PrimaryButton\("Login \/ Register", Icons\.Filled\.Login, onClick = onAuthRequired\)/);
+});
+
+test("android feed screen now uses the live mobile feed instead of the local demo pagination placeholder", () => {
+  assert.match(mainActivity, /val visibleJokes = \(if \(sessionStore\.hasLoadedFeed\) \{/);
+  assert.match(mainActivity, /sessionStore\.feedItems\.map \{ it\.toAppJoke\(\) \}/);
+  assert.match(mainActivity, /FeedScreen\([\s\S]*selectedSort = feedSort,[\s\S]*selectedCategory = feedCategory,[\s\S]*feedError = sessionStore\.feedError,[\s\S]*canLoadMoreFeed = sessionStore\.canLoadMoreFeed/);
+  assert.match(mainActivity, /StatusPanel\("Feed lädt", "Android zieht jetzt echte Witze von \/api\/mobile\/feed\."\)/);
+  assert.match(mainActivity, /StatusPanel\("Feed live", "Android nutzt \/api\/mobile\/feed ohne lokale Demo-Pagination\."\)/);
+  assert.match(mainActivity, /PrimaryButton\("Mehr laden", Icons\.Filled\.Refresh, onClick = onLoadMore\)/);
+  assert.doesNotMatch(mainActivity, /Naechster Schritt: API-Client an \/api\/mobile\/feed mit cursor anbinden\./);
 });
 
 test("android account deletion copy reflects the real mobile api flow", () => {

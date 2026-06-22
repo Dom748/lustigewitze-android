@@ -24,6 +24,18 @@ class SessionStore(
         private set
     var profileError by mutableStateOf<String?>(null)
         private set
+    var feedItems by mutableStateOf<List<MobileJoke>>(emptyList())
+        private set
+    var feedError by mutableStateOf<String?>(null)
+        private set
+    var isLoadingFeed by mutableStateOf(false)
+        private set
+    var hasLoadedFeed by mutableStateOf(false)
+        private set
+    var isLoadingMoreFeed by mutableStateOf(false)
+        private set
+    var canLoadMoreFeed by mutableStateOf(false)
+        private set
     var blockMessage by mutableStateOf<String?>(null)
         private set
     var isSubmittingAuth by mutableStateOf(false)
@@ -34,6 +46,7 @@ class SessionStore(
         private set
     var isBlockingUser by mutableStateOf(false)
         private set
+    private var nextFeedCursor: Int? = null
 
     suspend fun login(identifier: String, password: String) {
         isSubmittingAuth = true
@@ -89,6 +102,50 @@ class SessionStore(
         }
     }
 
+    suspend fun loadFeed(sort: String, category: String) {
+        isLoadingFeed = true
+        feedError = null
+        try {
+            val result = apiClient.getFeed(sort = sort, category = category, accessToken = accessToken)
+            feedItems = result.items
+            nextFeedCursor = result.nextCursor
+            canLoadMoreFeed = result.nextCursor != null
+            hasLoadedFeed = true
+        } catch (err: MobileApiException) {
+            feedError = err.message
+            feedItems = emptyList()
+            nextFeedCursor = null
+            canLoadMoreFeed = false
+        } catch (err: Exception) {
+            feedError = err.message ?: "Feed konnte nicht geladen werden."
+            feedItems = emptyList()
+            nextFeedCursor = null
+            canLoadMoreFeed = false
+        } finally {
+            isLoadingFeed = false
+        }
+    }
+
+    suspend fun loadMoreFeed(sort: String, category: String) {
+        val cursor = nextFeedCursor ?: return
+        if (isLoadingMoreFeed || isLoadingFeed) return
+        isLoadingMoreFeed = true
+        feedError = null
+        try {
+            val result = apiClient.getFeed(sort = sort, category = category, cursor = cursor, accessToken = accessToken)
+            val existingIds = feedItems.map { it.id }.toSet()
+            feedItems = feedItems + result.items.filterNot { existingIds.contains(it.id) }
+            nextFeedCursor = result.nextCursor
+            canLoadMoreFeed = result.nextCursor != null
+        } catch (err: MobileApiException) {
+            feedError = err.message
+        } catch (err: Exception) {
+            feedError = err.message ?: "Weitere Feed-Witze konnten nicht geladen werden."
+        } finally {
+            isLoadingMoreFeed = false
+        }
+    }
+
     suspend fun deleteAccount() {
         val token = accessToken ?: return
         isDeletingAccount = true
@@ -125,6 +182,7 @@ class SessionStore(
     fun clearErrors() {
         authError = null
         profileError = null
+        feedError = null
         blockMessage = null
     }
 
@@ -142,6 +200,11 @@ class SessionStore(
         refreshToken = null
         currentUser = null
         loadedProfile = null
+        feedItems = emptyList()
+        feedError = null
+        nextFeedCursor = null
+        canLoadMoreFeed = false
+        hasLoadedFeed = false
         prefs.edit().remove("accessToken").remove("refreshToken").apply()
     }
 }
