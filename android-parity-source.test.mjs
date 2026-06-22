@@ -57,6 +57,14 @@ test("android random screen uses the new swipe-forward helper copy", () => {
   assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should show the requested new subtitle");
 });
 
+test("android random undo walks the local stack back instead of only resetting one stale index", () => {
+  assert.equal(source.includes("var undoStack by rememberSaveable"), true, "Random screen should keep a stack of previous random positions");
+  assert.equal(source.includes("fun advanceRandomStack()"), true, "Random screen should advance through one helper so swipe/buttons keep undo state in sync");
+  assert.equal(source.includes("undoStack = (undoStack + currentIndex).takeLast(8)"), true, "Random advance should push the current index onto the undo stack");
+  assert.equal(source.includes("val previous = undoStack.last()"), true, "Undo should restore the most recent stack entry");
+  assert.equal(source.includes("undoStack = undoStack.dropLast(1)"), true, "Undo should pop the restored stack entry after going back");
+});
+
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
   assert.equal(source.includes("var selectedProfileUsername by rememberSaveable"), true, "App shell should track the selected profile username");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");

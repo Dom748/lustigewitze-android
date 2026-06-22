@@ -565,9 +565,14 @@ private fun RandomScreen(
     onAuthRequired: () -> Unit
 ) {
     var currentIndex by rememberSaveable { mutableStateOf(0) }
-    var undoIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    var undoStack by rememberSaveable { mutableStateOf(listOf<Int>()) }
     var dragX by remember { mutableFloatStateOf(0f) }
     val haptics = LocalHapticFeedback.current
+
+    fun advanceRandomStack() {
+        undoStack = (undoStack + currentIndex).takeLast(8)
+        currentIndex += 1
+    }
 
     if (jokes.isEmpty()) {
         Column(
@@ -602,8 +607,7 @@ private fun RandomScreen(
                         onDragEnd = {
                             if (abs(dragX) > 120f) {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                undoIndex = currentIndex
-                                currentIndex += 1
+                                advanceRandomStack()
                             }
                             dragX = 0f
                         },
@@ -618,23 +622,22 @@ private fun RandomScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             ComicAction("Nope", Icons.Filled.ThumbDown, Comic.Red, Modifier.weight(1f)) {
                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                undoIndex = currentIndex
-                currentIndex += 1
+                advanceRandomStack()
             }
             ComicAction("Top", Icons.Filled.ThumbUp, Comic.Yellow, Modifier.weight(1f)) {
                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onAuthRequired()
             }
             ComicAction("Neu", Icons.Filled.Refresh, Comic.Blue, Modifier.weight(1f)) {
-                undoIndex = currentIndex
-                currentIndex += 1
+                advanceRandomStack()
             }
         }
 
-        undoIndex?.let { previous ->
+        if (undoStack.isNotEmpty()) {
             TextButton(onClick = {
+                val previous = undoStack.last()
                 currentIndex = previous
-                undoIndex = null
+                undoStack = undoStack.dropLast(1)
             }) {
                 Text("Undo: letzten Witz zurueckholen", fontWeight = FontWeight.Black)
             }
