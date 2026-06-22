@@ -590,63 +590,72 @@ private fun RandomScreen(
 
     val joke = jokes[currentIndex % jokes.size]
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    Box(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
     ) {
-        ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
-        blockedUserMessage?.let {
-            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(joke.id) {
-                    detectDragGestures(
-                        onDragEnd = {
-                            if (abs(dragX) > 120f) {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                advanceRandomStack()
-                            }
-                            dragX = 0f
-                        },
-                        onDrag = { _, amount -> dragX += amount.x }
-                    )
-                }
-                .rotate(dragX / 40f)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
-        }
+            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
+            blockedUserMessage?.let {
+                Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+            }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            ComicAction("Nope", Icons.Filled.ThumbDown, Comic.Red, Modifier.weight(1f)) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                advanceRandomStack()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(joke.id) {
+                        detectDragGestures(
+                            onDragEnd = {
+                                if (abs(dragX) > 120f) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    advanceRandomStack()
+                                }
+                                dragX = 0f
+                            },
+                            onDrag = { _, amount -> dragX += amount.x }
+                        )
+                    }
+                    .rotate(dragX / 40f)
+            ) {
+                JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
             }
-            ComicAction("Top", Icons.Filled.ThumbUp, Comic.Yellow, Modifier.weight(1f)) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onAuthRequired()
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                ComicAction("Nope", Icons.Filled.ThumbDown, Comic.Red, Modifier.weight(1f)) {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    advanceRandomStack()
+                }
+                ComicAction("Top", Icons.Filled.ThumbUp, Comic.Yellow, Modifier.weight(1f)) {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onAuthRequired()
+                }
+                ComicAction("Neu", Icons.Filled.Refresh, Comic.Blue, Modifier.weight(1f)) {
+                    advanceRandomStack()
+                }
             }
-            ComicAction("Neu", Icons.Filled.Refresh, Comic.Blue, Modifier.weight(1f)) {
-                advanceRandomStack()
-            }
+
+            StatusPanel(
+                title = "Native Random-Flow",
+                message = "Swipe, Buttons, Undo und Haptik-Aequivalent sind als MVP-State vorhanden."
+            )
         }
 
         if (undoStack.isNotEmpty()) {
-            TextButton(onClick = {
-                val previous = undoStack.last()
-                currentIndex = previous
-                undoStack = undoStack.dropLast(1)
-            }) {
+            TextButton(
+                onClick = {
+                    val previous = undoStack.last()
+                    currentIndex = previous
+                    undoStack = undoStack.dropLast(1)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 18.dp, bottom = 18.dp)
+            ) {
                 Text("Undo: letzten Witz zurueckholen", fontWeight = FontWeight.Black)
             }
         }
-
-        StatusPanel(
-            title = "Native Random-Flow",
-            message = "Swipe, Buttons, Undo und Haptik-Aequivalent sind als MVP-State vorhanden."
-        )
     }
 }
 

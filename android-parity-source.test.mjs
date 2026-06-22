@@ -63,6 +63,7 @@ test("android random undo walks the local stack back instead of only resetting o
   assert.equal(source.includes("undoStack = (undoStack + currentIndex).takeLast(8)"), true, "Random advance should push the current index onto the undo stack");
   assert.equal(source.includes("val previous = undoStack.last()"), true, "Undo should restore the most recent stack entry");
   assert.equal(source.includes("undoStack = undoStack.dropLast(1)"), true, "Undo should pop the restored stack entry after going back");
+  assert.match(source, /if \(undoStack\.isNotEmpty\(\)\)[\s\S]*\.align\(Alignment\.BottomStart\)/, "Random undo should overlay at the bottom instead of taking column space");
 });
 
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
