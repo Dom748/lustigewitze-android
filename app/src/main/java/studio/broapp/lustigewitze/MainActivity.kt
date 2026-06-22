@@ -88,6 +88,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -265,6 +266,9 @@ private fun LustigeWitzeApp() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
+    val context = LocalContext.current
+    val sessionStore = remember { SessionStore(context = context, apiClient = MobileApiClient()) }
+    val scope = rememberCoroutineScope()
     var selectedTab by rememberSaveable { mutableStateOf(Tab.Feed) }
     var selectedJoke by remember { mutableStateOf<Joke?>(null) }
     var selectedProfileUsername by rememberSaveable { mutableStateOf<String?>(null) }
@@ -273,6 +277,24 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     var showAuth by rememberSaveable { mutableStateOf(false) }
     var showComposer by rememberSaveable { mutableStateOf(false) }
     var accountDeleted by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(sessionStore.accessToken) {
+        if (!sessionStore.accessToken.isNullOrBlank()) {
+            sessionStore.loadOwnProfile()
+        }
+    }
+
+    LaunchedEffect(sessionStore.blockMessage) {
+        val message = sessionStore.blockMessage ?: return@LaunchedEffect
+        blockedUserMessage = message
+        if (message.startsWith("blocked_user:")) {
+            val blockedKey = message.removePrefix("blocked_user:")
+            blockedAuthors = (blockedAuthors + blockedKey).distinct()
+            selectedJoke = null
+            selectedProfileUsername = null
+            selectedTab = Tab.Feed
+        }
+    }
 
     val visibleJokes = demoJokes.filterNot { blockedAuthors.contains(it.author) }
 
@@ -335,11 +357,17 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     onOpenProfile = { selectedProfileUsername = it }
                 )
                 Tab.Profile -> ProfileScreen(
-                    username = "pointenpaule",
-                    isOwnProfile = true,
+                    username = sessionStore.currentUser?.username ?: "pointenpaule",
+                    isOwnProfile = sessionStore.currentUser != null,
                     accountDeleted = accountDeleted,
+                    sessionStore = sessionStore,
                     onAuthRequired = { showAuth = true },
-                    onDeleteAccount = { accountDeleted = true }
+                    onDeleteAccount = {
+                        scope.launch {
+                            sessionStore.deleteAccount()
+                            accountDeleted = sessionStore.accessToken == null
+                        }
+                    }
                 )
             }
         }
@@ -354,11 +382,12 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 onOpenProfile = { selectedProfileUsername = it },
                 onAuthRequired = { showAuth = true },
                 onBlockAuthor = { author ->
-                    blockedAuthors = (blockedAuthors + author).distinct()
-                    blockedUserMessage = "blocked_user:$author"
-                    selectedJoke = null
-                    selectedProfileUsername = null
-                    selectedTab = Tab.Feed
+                    scope.launch {
+                        val blocked = sessionStore.blockAuthorAndReport(authorId = author, jokeId = joke.id)
+                        if (blocked) {
+                            blockedAuthors = (blockedAuthors + author).distinct()
+                        }
+                    }
                 }
             )
         }
@@ -368,12 +397,16 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         ModalBottomSheet(onDismissRequest = { selectedProfileUsername = null }) {
             ProfileScreen(
                 username = username,
-                isOwnProfile = username == "pointenpaule",
+                isOwnProfile = username == sessionStore.currentUser?.username,
                 accountDeleted = accountDeleted,
+                sessionStore = sessionStore,
                 onAuthRequired = { showAuth = true },
                 onDeleteAccount = {
-                    accountDeleted = true
-                    selectedProfileUsername = null
+                    scope.launch {
+                        sessionStore.deleteAccount()
+                        accountDeleted = sessionStore.accessToken == null
+                        selectedProfileUsername = null
+                    }
                 }
             )
         }
@@ -381,7 +414,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
 
     if (showAuth) {
         ModalBottomSheet(onDismissRequest = { showAuth = false }) {
-            AuthSheet(onDone = { showAuth = false })
+            AuthSheet(sessionStore = sessionStore, onDone = { showAuth = false })
         }
     }
 
@@ -628,10 +661,21 @@ private fun ProfileScreen(
     username: String,
     isOwnProfile: Boolean,
     accountDeleted: Boolean,
+    sessionStore: SessionStore,
     onAuthRequired: () -> Unit,
     onDeleteAccount: () -> Unit
 ) {
-    val profile = demoProfiles[username] ?: ProfileSummary(
+    val profile = sessionStore.loadedProfile?.takeIf { it.user.username == username }?.let { loaded ->
+        ProfileSummary(
+            username = loaded.user.username,
+            headline = loaded.user.bio ?: "Profil wird live aus dem Mobile Namespace geladen.",
+            jokeCount = loaded.stats.jokeCount,
+            totalScore = loaded.stats.totalScore,
+            favoriteCategory = loaded.stats.favoriteCategory,
+            averageScore = loaded.stats.averageScore,
+            favoriteCount = loaded.favorites.size
+        )
+    } ?: demoProfiles[username] ?: ProfileSummary(
         username = username,
         headline = "Profil wird aus dem Mobile Namespace gespiegelt.",
         jokeCount = 0,
@@ -641,6 +685,14 @@ private fun ProfileScreen(
         favoriteCount = 0
     )
     var showDeleteWarning by rememberSaveable(username) { mutableStateOf(false) }
+
+    LaunchedEffect(username, sessionStore.accessToken) {
+        if (username == sessionStore.currentUser?.username) {
+            sessionStore.loadOwnProfile()
+        } else {
+            sessionStore.loadProfile(username)
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
@@ -669,6 +721,9 @@ private fun ProfileScreen(
             Text("Gesamt-Score", fontWeight = FontWeight.Black)
             Text(profile.totalScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
         }
+        sessionStore.profileError?.let {
+            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+        }
         if (isOwnProfile) {
             if (accountDeleted) {
                 StatusPanel("Konto gelöscht", "Demo-State: Account wurde lokal als gelöscht markiert.")
@@ -689,9 +744,21 @@ private fun ProfileScreen(
 }
 
 @Composable
-private fun AuthSheet(onDone: () -> Unit) {
+private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
     var mode by rememberSaveable { mutableStateOf("Login") }
+    var identifier by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(sessionStore.currentUser?.id) {
+        if (sessionStore.currentUser != null) {
+            onDone()
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(18.dp).windowInsetsPadding(WindowInsets.navigationBars),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -701,11 +768,12 @@ private fun AuthSheet(onDone: () -> Unit) {
             Segment("Login", selected = mode == "Login") { mode = "Login" }
             Segment("Register", selected = mode == "Register") { mode = "Register" }
         }
-        OutlinedTextField(value = "", onValueChange = {}, label = { Text("Username oder E-Mail") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = identifier, onValueChange = { identifier = it }, label = { Text("Username oder E-Mail") }, modifier = Modifier.fillMaxWidth())
         if (mode == "Register") {
-            OutlinedTextField(value = "", onValueChange = {}, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("E-Mail") }, modifier = Modifier.fillMaxWidth())
         }
-        OutlinedTextField(value = "", onValueChange = {}, label = { Text("Passwort") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Passwort") }, modifier = Modifier.fillMaxWidth())
         ComicCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
@@ -715,7 +783,22 @@ private fun AuthSheet(onDone: () -> Unit) {
                 }
             }
         }
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth(), enabled = acceptedTerms) {
+        sessionStore.authError?.let {
+            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+        }
+        Button(
+            onClick = {
+                scope.launch {
+                    if (mode == "Login") {
+                        sessionStore.login(identifier = identifier, password = password)
+                    } else {
+                        sessionStore.register(username = username, email = email, password = password)
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = acceptedTerms && !sessionStore.isSubmittingAuth
+        ) {
             Text(mode, fontWeight = FontWeight.Black)
         }
     }
