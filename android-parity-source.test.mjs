@@ -60,7 +60,7 @@ test("android random screen uses the new swipe-forward helper copy", () => {
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
   assert.equal(source.includes("var selectedProfileUsername by rememberSaveable"), true, "App shell should track the selected profile username");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
-  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(joke.author) })'), true, "Joke cards should open a profile when the author name is tapped");
+  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(joke.authorUsername) })'), true, "Joke cards should open a profile when the author name is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(comment.author) })'), true, "Detail comments should open a profile when the author name is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(name) })'), true, "Leaderboard rows should open a profile when the username is tapped");
 });
@@ -68,6 +68,6 @@ test("android routes usernames into profile navigation from cards comments and l
 test("android detail flow can block a user and surface blocked-user handling", () => {
   assert.equal(source.includes("var blockedAuthors by rememberSaveable"), true, "App shell should persist blocked authors");
   assert.equal(source.includes('ComicAction("User blockieren"'), true, "DetailScreen should expose a block-user action");
-  assert.equal(source.includes('blockedUserMessage = "blocked_user:'), true, "Blocking should surface a blocked_user status message for parity with iOS/web handling");
-  assert.equal(source.includes("filterNot { blockedAuthors.contains(it.author) }"), true, "Feed/random data should filter blocked authors out after blocking");
+  assert.equal(sessionStore.includes('blockMessage = "blocked_user:${result.blockedUserId}"'), true, "Blocking should surface a blocked_user status message for parity with iOS/web handling");
+  assert.equal(source.includes("filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }"), true, "Feed/random data should filter blocked authors out after blocking");
 });
