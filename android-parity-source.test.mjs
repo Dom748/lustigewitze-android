@@ -80,3 +80,13 @@ test("android detail flow can block a user and surface blocked-user handling", (
   assert.equal(sessionStore.includes('blockMessage = "blocked_user:${result.blockedUserId}"'), true, "Blocking should surface a blocked_user status message for parity with iOS/web handling");
   assert.equal(source.includes("filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }"), true, "Feed/random data should filter blocked authors out after blocking");
 });
+
+test("android overview cards collapse long jokes while detail keeps full text", () => {
+  assert.equal(source.includes("private const val JOKE_CARD_PREVIEW_LIMIT = 400"), true, "Android should define the 400-char preview limit");
+  assert.equal(source.includes("truncatesLongContent: Boolean = true"), true, "JokeCard should default to truncated overview mode");
+  assert.equal(source.includes("rememberSaveable(joke.id, truncatesLongContent)"), true, "JokeCard should keep its expanded state per joke");
+  assert.equal(source.includes("val shouldShowContentDisclosure = truncatesLongContent && joke.content.length > JOKE_CARD_PREVIEW_LIMIT"), true, "JokeCard should only show the disclosure for long overview text");
+  assert.equal(source.includes("joke.content.take(JOKE_CARD_PREVIEW_LIMIT).trimEnd() + \"…\""), true, "Overview cards should truncate long jokes to 400 characters with an ellipsis");
+  assert.equal(source.includes('if (isContentExpanded) "Weniger anzeigen" else "Mehr anzeigen"'), true, "Overview cards should expose a more/less toggle");
+  assert.equal(source.includes("truncatesLongContent = false"), true, "DetailScreen should keep full joke text visible");
+});

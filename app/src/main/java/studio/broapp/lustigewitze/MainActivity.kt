@@ -138,6 +138,7 @@ private const val AUTO_LONG_JOKE_THRESHOLD = 420
 private const val STANDARD_JOKE_MAX_CHARS = 420
 private const val LONG_JOKE_MAX_CHARS = 2500
 private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden automatisch als Lange Witze gespeichert."
+private const val JOKE_CARD_PREVIEW_LIMIT = 400
 
 private val demoJokes = listOf(
     Joke(
@@ -680,7 +681,13 @@ private fun DetailScreen(
             }
             Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 22.sp)
         }
-        JokeCard(joke = joke, onOpen = {}, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
+        JokeCard(
+            joke = joke,
+            onOpen = {},
+            onOpenProfile = onOpenProfile,
+            onAuthRequired = onAuthRequired,
+            truncatesLongContent = false
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ComicAction("Teilen", Icons.Filled.Share, Comic.Blue, Modifier.weight(1f)) {}
             ComicAction("Report", Icons.Filled.Flag, Comic.Pink, Modifier.weight(1f)) { onAuthRequired() }
@@ -1171,7 +1178,21 @@ private fun SwipeVoteBadge(label: String, icon: ImageVector, color: Color, modif
 }
 
 @Composable
-private fun JokeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> Unit, onAuthRequired: () -> Unit) {
+private fun JokeCard(
+    joke: Joke,
+    onOpen: () -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onAuthRequired: () -> Unit,
+    truncatesLongContent: Boolean = true
+) {
+    var isContentExpanded by rememberSaveable(joke.id, truncatesLongContent) { mutableStateOf(false) }
+    val shouldShowContentDisclosure = truncatesLongContent && joke.content.length > JOKE_CARD_PREVIEW_LIMIT
+    val visibleContent = if (shouldShowContentDisclosure && !isContentExpanded) {
+        joke.content.take(JOKE_CARD_PREVIEW_LIMIT).trimEnd() + "…"
+    } else {
+        joke.content
+    }
+
     ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Pill(joke.category, Comic.Yellow)
@@ -1179,12 +1200,21 @@ private fun JokeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> 
             ScoreBadge(joke.score)
         }
         Text(
-            joke.content,
+            visibleContent,
             fontSize = 22.sp,
             fontWeight = FontWeight.Black,
             lineHeight = 28.sp,
             modifier = Modifier.padding(top = 14.dp)
         )
+        if (shouldShowContentDisclosure) {
+            TextButton(onClick = { isContentExpanded = !isContentExpanded }) {
+                Text(
+                    if (isContentExpanded) "Weniger anzeigen" else "Mehr anzeigen",
+                    color = Comic.Ink,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+        }
         TextButton(onClick = { onOpenProfile(joke.authorUsername) }) {
             Text(
                 "von @${joke.authorUsername}",
