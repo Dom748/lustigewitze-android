@@ -87,6 +87,9 @@ test("android overview cards collapse long jokes while detail keeps full text", 
   assert.equal(source.includes("rememberSaveable(joke.id, truncatesLongContent)"), true, "JokeCard should keep its expanded state per joke");
   assert.equal(source.includes("val shouldShowContentDisclosure = truncatesLongContent && joke.content.length > JOKE_CARD_PREVIEW_LIMIT"), true, "JokeCard should only show the disclosure for long overview text");
   assert.equal(source.includes("joke.content.take(JOKE_CARD_PREVIEW_LIMIT).trimEnd() + \"…\""), true, "Overview cards should truncate long jokes to 400 characters with an ellipsis");
-  assert.equal(source.includes('if (isContentExpanded) "Weniger anzeigen" else "Mehr anzeigen"'), true, "Overview cards should expose a more/less toggle");
+  assert.equal(source.includes('if (expanded) "Weniger anzeigen" else "Mehr anzeigen"'), true, "Overview cards should expose a more/less toggle");
+  assert.equal(source.includes("Icons.Filled.ExpandLess else Icons.Filled.ExpandMore"), true, "Overview cards should use chevron icons like the iOS disclosure pill");
+  assert.equal(source.includes("Comic.Yellow.copy(alpha = 0.88f)"), true, "Disclosure pill should use the softer yellow fill like iOS");
+  assert.equal(source.includes("BorderStroke(1.5.dp, Comic.Ink)"), true, "Disclosure pill should use the lighter iOS-like outline");
   assert.equal(source.includes("truncatesLongContent = false"), true, "DetailScreen should keep full joke text visible");
 });

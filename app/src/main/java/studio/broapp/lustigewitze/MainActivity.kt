@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
@@ -1207,13 +1209,10 @@ private fun JokeCard(
             modifier = Modifier.padding(top = 14.dp)
         )
         if (shouldShowContentDisclosure) {
-            TextButton(onClick = { isContentExpanded = !isContentExpanded }) {
-                Text(
-                    if (isContentExpanded) "Weniger anzeigen" else "Mehr anzeigen",
-                    color = Comic.Ink,
-                    fontWeight = FontWeight.Black,
-                )
-            }
+            JokeDisclosureButton(
+                expanded = isContentExpanded,
+                onClick = { isContentExpanded = !isContentExpanded }
+            )
         }
         TextButton(onClick = { onOpenProfile(joke.authorUsername) }) {
             Text(
@@ -1281,6 +1280,36 @@ private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
 private fun ScoreBadge(score: Int) {
     Surface(shape = CircleShape, color = Comic.Blue, border = BorderStroke(2.dp, Comic.Ink)) {
         Text(score.toString(), fontWeight = FontWeight.Black, modifier = Modifier.padding(10.dp))
+    }
+}
+
+@Composable
+private fun JokeDisclosureButton(expanded: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        color = Comic.Yellow.copy(alpha = 0.88f),
+        border = BorderStroke(1.5.dp, Comic.Ink),
+        modifier = Modifier.padding(top = 10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                null,
+                tint = Comic.Ink,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                if (expanded) "Weniger anzeigen" else "Mehr anzeigen",
+                color = Comic.Ink,
+                fontWeight = FontWeight.Black,
+                fontSize = 13.sp,
+            )
+        }
     }
 }
 
