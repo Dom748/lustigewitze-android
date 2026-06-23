@@ -32,8 +32,15 @@ test('android shell uses stitched bottom navigation and comic floating actions',
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
   assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
-  assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft\)/, 'Profile should use dedicated stitched stat cards');
-  assert.match(mainActivity, /ProfileStatCard\("Ø Score \/ Joke", resolvedProfile\.averageScore\.toString\(\), Comic\.BlueSoft\)/, 'Profile stats should be visually grouped instead of isolated plain cards');
+  assert.match(mainActivity, /Frische Pointen, klar sortiert und näher an iOS inszeniert\./, 'Feed header should adopt the more editorial iOS-style subtitle');
+  assert.match(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter card should surface the active sort state in an editorial badge');
+  assert.match(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter card should explain the tighter iOS-like structure');
+  assert.match(mainActivity, /ProfileHeroCard\(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile\)/, 'Profile should render a dedicated editorial hero card');
+  assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft, Modifier\.weight\(1f\)\)/, 'Profile stats should sit in a two-column stitched row');
+  assert.match(mainActivity, /private fun CommentThreadPanel\(visibleComments: List<Comment>, onOpenProfile: \(String\) -> Unit\)/, 'Detail comments should move into a dedicated thread panel helper');
+  assert.match(mainActivity, /private fun CommentComposerCard\(onAuthRequired: \(\) -> Unit\)/, 'Detail composer should move into its own cleaner card');
+  assert.match(mainActivity, /Text\("\$\{visibleComments\.size\} Einträge", color = Comic\.Muted, fontWeight = FontWeight\.SemiBold\)/, 'Comment panel should summarize the visible thread size');
+  assert.match(mainActivity, /Zum Schreiben bitte kurz einloggen — die Detailansicht bleibt sonst bewusst sauber und lesbar\./, 'Comment composer card should explain the cleaner login gate');
   assert.match(mainActivity, /StatusPanel\(\s*title = "Random Flow"/, 'Random screen should use a cleaner stitched status panel title');
   assert.match(mainActivity, /SafetyPanel\(/, 'Detail screen should move report and block controls into a dedicated safety panel');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Surface\([\s\S]*color = Comic\.YellowSoft/, 'Screen headers should render inside a stitched hero surface');

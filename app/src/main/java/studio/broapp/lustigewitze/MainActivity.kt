@@ -537,7 +537,7 @@ private fun FeedScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            ScreenHeader(title = "LustigeWitze", subtitle = "Feed lesen, bewerten und merken.", badge = "Feed")
+            ScreenHeader(title = "LustigeWitze", subtitle = "Frische Pointen, klar sortiert und näher an iOS inszeniert.", badge = "Feed")
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
@@ -549,8 +549,17 @@ private fun FeedScreen(
                     Pill("Feed Filter", Comic.Yellow)
                     Spacer(Modifier.width(8.dp))
                     Pill(if (selectedCategory == "all") "Alle Kategorien" else selectedCategory, Comic.BlueSoft)
+                    Spacer(Modifier.weight(1f))
+                    Pill(if (selectedSort == "latest") "Neu zuerst" else "Top zuerst", Comic.Pink)
                 }
                 Text("Sortierung & Kategorien", fontWeight = FontWeight.Black, fontSize = 18.sp, modifier = Modifier.padding(top = 12.dp))
+                Text(
+                    "Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen.",
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
                     Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
@@ -735,22 +744,8 @@ private fun DetailScreen(
             onBlockAuthor = { onBlockAuthor(joke.authorId, joke.authorUsername) }
         )
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
-        visibleComments.forEach { comment ->
-            ComicCard {
-                TextButton(onClick = { onOpenProfile(comment.author) }) {
-                    Text("@${comment.author}", fontWeight = FontWeight.Black)
-                }
-                Text(comment.content, modifier = Modifier.padding(top = 4.dp))
-            }
-        }
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            placeholder = { Text("Kommentar schreiben...") },
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = true
-        )
-        PrimaryButton("Einloggen zum Kommentieren", Icons.Filled.Login, onClick = onAuthRequired)
+        CommentThreadPanel(visibleComments = visibleComments, onOpenProfile = onOpenProfile)
+        CommentComposerCard(onAuthRequired = onAuthRequired)
     }
 }
 
@@ -864,19 +859,11 @@ private fun ProfileScreen(
 
         val resolvedProfile = profile ?: return@Column
         ScreenHeader(title = "Profil", subtitle = resolvedProfile.headline, badge = if (isOwnProfile) "Account" else "Creator")
-        ComicCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.AccountCircle, null, modifier = Modifier.size(54.dp), tint = Comic.Blue)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("@${resolvedProfile.username}", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    Text("${resolvedProfile.favoriteCount} Favoriten · ${resolvedProfile.jokeCount} Jokes", color = Comic.Muted)
-                }
-                Pill(if (isOwnProfile) "Dein Profil" else "Creator", Comic.Yellow)
-            }
+        ProfileHeroCard(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ProfileStatCard("Lieblingskategorie", resolvedProfile.favoriteCategory, Comic.YellowSoft, Modifier.weight(1f))
+            ProfileStatCard("Ø Score / Joke", resolvedProfile.averageScore.toString(), Comic.BlueSoft, Modifier.weight(1f))
         }
-        ProfileStatCard("Lieblingskategorie", resolvedProfile.favoriteCategory, Comic.YellowSoft)
-        ProfileStatCard("Ø Score / Joke", resolvedProfile.averageScore.toString(), Comic.BlueSoft)
         ProfileStatCard("Gesamt-Score", resolvedProfile.totalScore.toString(), Comic.Pink)
         if (sessionStore.isLoadingProfile) {
             Text("Profil wird geladen...", color = Comic.Muted, fontWeight = FontWeight.Black)
@@ -1339,13 +1326,82 @@ private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ProfileStatCard(title: String, value: String, accent: Color) {
-    ComicCard {
+private fun ProfileStatCard(title: String, value: String, accent: Color, modifier: Modifier = Modifier) {
+    ComicCard(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Pill(title, accent)
             Spacer(Modifier.width(10.dp))
             Text(value, color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 18.sp)
         }
+    }
+}
+
+@Composable
+private fun ProfileHeroCard(resolvedProfile: ProfileSummary, isOwnProfile: Boolean) {
+    ComicCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.AccountCircle, null, modifier = Modifier.size(58.dp), tint = Comic.Blue)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("@${resolvedProfile.username}", fontWeight = FontWeight.Black, fontSize = 22.sp)
+                Text(resolvedProfile.headline, color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp)
+            }
+            Pill(if (isOwnProfile) "Dein Profil" else "Creator", Comic.Yellow)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
+            Pill("${resolvedProfile.favoriteCount} Favoriten", Comic.Pink)
+            Pill("${resolvedProfile.jokeCount} Jokes", Comic.BlueSoft)
+        }
+    }
+}
+
+@Composable
+private fun CommentThreadPanel(visibleComments: List<Comment>, onOpenProfile: (String) -> Unit) {
+    ComicCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill("Kommentare", Comic.BlueSoft)
+            Spacer(Modifier.weight(1f))
+            Text("${visibleComments.size} Einträge", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+            visibleComments.forEach { comment ->
+                Surface(
+                    color = Comic.Cream,
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(2.dp, Comic.Ink),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        TextButton(onClick = { onOpenProfile(comment.author) }) {
+                            Text("@${comment.author}", fontWeight = FontWeight.Black)
+                        }
+                        Text(comment.content, modifier = Modifier.padding(top = 4.dp), lineHeight = 21.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentComposerCard(onAuthRequired: () -> Unit) {
+    ComicCard {
+        Pill("Kommentar", Comic.YellowSoft)
+        OutlinedTextField(
+            value = "",
+            onValueChange = {},
+            placeholder = { Text("Kommentar schreiben...") },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            readOnly = true
+        )
+        Text(
+            "Zum Schreiben bitte kurz einloggen — die Detailansicht bleibt sonst bewusst sauber und lesbar.",
+            color = Comic.Muted,
+            fontWeight = FontWeight.SemiBold,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        PrimaryButton("Einloggen zum Kommentieren", Icons.Filled.Login, onClick = onAuthRequired)
     }
 }
 
