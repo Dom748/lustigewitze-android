@@ -57,13 +57,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -361,38 +361,51 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(
-                containerColor = if (darkMode) Comic.DarkPaper else Comic.Cream,
-                tonalElevation = 0.dp
+            Surface(
+                color = if (darkMode) Comic.DarkPaper else Comic.Cream,
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                border = BorderStroke(3.dp, Comic.Ink),
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                Tab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label, fontWeight = FontWeight.Black) }
-                    )
+                NavigationBar(
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp
+                ) {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = { selectedTab = tab },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label, fontWeight = FontWeight.Black) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Comic.Ink,
+                                selectedTextColor = Comic.Ink,
+                                indicatorColor = Comic.Yellow,
+                                unselectedIconColor = Comic.Muted,
+                                unselectedTextColor = Comic.Muted
+                            )
+                        )
+                    }
                 }
             }
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                FloatingActionButton(
+                FloatingComicButton(
                     onClick = onToggleTheme,
                     containerColor = if (darkMode) Comic.Blue else Comic.Paper,
-                    contentColor = Comic.Ink,
-                    shape = CircleShape
-                ) {
-                    Icon(if (darkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode, "Theme wechseln")
-                }
-                FloatingActionButton(
+                    icon = if (darkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                    contentDescription = "Theme wechseln"
+                )
+                FloatingComicButton(
                     onClick = { showComposer = true },
                     containerColor = Comic.Yellow,
-                    contentColor = Comic.Ink,
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Filled.Add, "Neuen Witz erstellen")
-                }
+                    icon = Icons.Filled.Add,
+                    contentDescription = "Neuen Witz erstellen"
+                )
             }
         }
     ) { innerPadding ->
@@ -532,9 +545,13 @@ private fun FeedScreen(
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
             ComicCard(modifier = Modifier.padding(top = 14.dp)) {
-                Text("Filter", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                Text("Kategorien laufen jetzt horizontal, damit der Feed frei scrollt und das Stitch-Layout sauber bleibt.", color = Comic.Muted, modifier = Modifier.padding(top = 6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Pill("Feed Filter", Comic.Yellow)
+                    Spacer(Modifier.width(8.dp))
+                    Pill(if (selectedCategory == "all") "Alle Kategorien" else selectedCategory, Comic.BlueSoft)
+                }
+                Text("Sortierung & Kategorien", fontWeight = FontWeight.Black, fontSize = 18.sp, modifier = Modifier.padding(top = 12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
                     Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
                     Segment("Reload", selected = false, onClick = onRefresh)
@@ -1094,6 +1111,25 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = onDone, modifier = Modifier.weight(1f)) { Text("Entwurf schliessen") }
             Button(onClick = onAuthRequired, modifier = Modifier.weight(1f), enabled = lengthErrorMessage == null) { Text("Login fuer Publish") }
+        }
+    }
+}
+
+@Composable
+private fun FloatingComicButton(
+    onClick: () -> Unit,
+    containerColor: Color,
+    icon: ImageVector,
+    contentDescription: String
+) {
+    Surface(
+        color = containerColor,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        shadowElevation = 12.dp
+    ) {
+        IconButton(onClick = onClick, modifier = Modifier.size(58.dp)) {
+            Icon(icon, contentDescription = contentDescription, tint = Comic.Ink)
         }
     }
 }
