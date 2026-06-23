@@ -36,6 +36,9 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /ProfileStatCard\("Ø Score \/ Joke", resolvedProfile\.averageScore\.toString\(\), Comic\.BlueSoft\)/, 'Profile stats should be visually grouped instead of isolated plain cards');
   assert.match(mainActivity, /StatusPanel\(\s*title = "Random Flow"/, 'Random screen should use a cleaner stitched status panel title');
   assert.match(mainActivity, /SafetyPanel\(/, 'Detail screen should move report and block controls into a dedicated safety panel');
+  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Surface\([\s\S]*color = Comic\.YellowSoft/, 'Screen headers should render inside a stitched hero surface');
+  assert.match(mainActivity, /private fun ScoreBadge\(score: Int\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
+  assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });
 
 test('android manifest wires a first-party launcher icon resource', () => {

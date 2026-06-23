@@ -716,7 +716,12 @@ private fun DetailScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowBack, "Zurueck")
             }
-            Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 22.sp)
+            Column {
+                Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 24.sp)
+                Text("Lesen, teilen und moderieren in einer ruhigeren Ansicht.", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.weight(1f))
+            Pill("Detail", Comic.YellowSoft)
         }
         JokeCard(
             joke = joke,
@@ -1235,19 +1240,19 @@ private fun JokeCard(
     }
 
     ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Pill(joke.category, Comic.Yellow)
-        Spacer(Modifier.weight(1f))
-        ScoreBadge(joke.score)
-    }
-    Text(
-        visibleContent,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Black,
-        lineHeight = 32.sp,
-        modifier = Modifier.padding(top = 14.dp)
-    )
-if (shouldShowContentDisclosure) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill(joke.category, Comic.Yellow)
+            Spacer(Modifier.weight(1f))
+            ScoreBadge(joke.score)
+        }
+        Text(
+            visibleContent,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Black,
+            lineHeight = 32.sp,
+            modifier = Modifier.padding(top = 14.dp)
+        )
+        if (shouldShowContentDisclosure) {
             JokeDisclosureButton(
                 expanded = isContentExpanded,
                 onClick = { isContentExpanded = !isContentExpanded }
@@ -1274,10 +1279,28 @@ if (shouldShowContentDisclosure) {
 
 @Composable
 private fun ScreenHeader(title: String, subtitle: String, badge: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Pill(badge, Comic.Pink)
-        Text(title, fontSize = 34.sp, fontWeight = FontWeight.Black, lineHeight = 38.sp)
-        Text(subtitle, color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+    Surface(
+        color = Comic.YellowSoft,
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .background(Comic.Paper, RoundedCornerShape(25.dp))
+                .padding(4.dp)
+                .background(Comic.YellowSoft.copy(alpha = 0.72f), RoundedCornerShape(22.dp))
+                .padding(horizontal = 16.dp, vertical = 15.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Pill(badge, Comic.Pink)
+                Spacer(Modifier.weight(1f))
+                Pill("Stitch", Comic.Yellow)
+            }
+            Text(title, fontSize = 34.sp, fontWeight = FontWeight.Black, lineHeight = 38.sp)
+            Text(subtitle, color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 22.sp)
+        }
     }
 }
 
@@ -1340,8 +1363,18 @@ private fun SafetyPanel(onAuthRequired: () -> Unit, onBlockAuthor: () -> Unit) {
 
 @Composable
 private fun ScoreBadge(score: Int) {
-    Surface(shape = CircleShape, color = Comic.Blue, border = BorderStroke(2.dp, Comic.Ink)) {
-        Text(score.toString(), fontWeight = FontWeight.Black, modifier = Modifier.padding(10.dp))
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Comic.Blue,
+        border = BorderStroke(2.dp, Comic.Ink)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+        ) {
+            Text("Score", fontWeight = FontWeight.Black, fontSize = 10.sp, color = Comic.Ink)
+            Text(score.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = Comic.Ink)
+        }
     }
 }
 
@@ -1377,21 +1410,26 @@ private fun JokeDisclosureButton(expanded: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit, showTitle: Boolean = true) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .background(if (active) Comic.Yellow else Comic.BlueSoft, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = if (showTitle) 10.dp else 12.dp)
+    Surface(
+        color = if (active) Comic.Yellow else Comic.BlueSoft,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = modifier.clickable(onClick = onClick)
     ) {
-        Icon(
-            icon,
-            title,
-            tint = if (active) Comic.Red else Comic.Ink,
-            modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
-        )
-        if (showTitle) {
-            Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(vertical = if (showTitle) 10.dp else 12.dp, horizontal = 6.dp)
+        ) {
+            Icon(
+                icon,
+                title,
+                tint = if (active) Comic.Red else Comic.Ink,
+                modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
+            )
+            if (showTitle) {
+                Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            }
         }
     }
 }
