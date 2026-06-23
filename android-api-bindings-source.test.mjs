@@ -61,7 +61,7 @@ test("android guest profile no longer fakes a logged-in pointenpaule account", (
   assert.match(mainActivity, /Tab\.Profile -> ProfileScreen\([\s\S]*username = sessionStore\.currentUser\?\.username,/);
   assert.match(mainActivity, /if \(username == null\) \{[\s\S]*badge = "Gast"/);
   assert.match(mainActivity, /Text\("Gastkonto aktiv"/);
-  assert.match(mainActivity, /PrimaryButton\("Login \/ Register", Icons\.Filled\.Login, onClick = onAuthRequired\)/);
+  assert.match(mainActivity, /PrimaryButton\("Login \/ Register", Icons\.AutoMirrored\.Filled\.Login, onClick = onAuthRequired\)/);
 });
 
 test("android feed screen now uses the live mobile feed instead of the local demo pagination placeholder", () => {

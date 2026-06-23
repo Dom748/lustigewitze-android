@@ -30,20 +30,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -51,7 +52,6 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private enum class Tab(val label: String, val icon: ImageVector) {
-    Feed("Feed", Icons.Filled.List),
+    Feed("Feed", Icons.AutoMirrored.Filled.List),
     Random("Zufall", Icons.Filled.Shuffle),
     Leaderboard("Rangliste", Icons.Filled.EmojiEvents),
     Profile("Profil", Icons.Filled.Person)
@@ -657,6 +657,8 @@ private fun RandomScreen(
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
 
+            RandomQueueCard(currentIndex = currentIndex, total = jokes.size, undoAvailable = undoStack.isNotEmpty())
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -679,6 +681,16 @@ private fun RandomScreen(
                 JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
             }
 
+            if (undoStack.isNotEmpty()) {
+                RandomUndoButton(
+                    onUndo = {
+                        val previous = undoStack.last()
+                        currentIndex = previous
+                        undoStack = undoStack.dropLast(1)
+                    }
+                )
+            }
+
             PrimaryButton("Neuen Random-Witz laden", Icons.Filled.Refresh) {
                 advanceRandomStack()
             }
@@ -687,21 +699,6 @@ private fun RandomScreen(
                 title = "Random Flow",
                 message = "Ein klarer CTA unten, Swipe direkt auf der Karte und Undo als leise Rückhol-Option."
             )
-        }
-
-        if (undoStack.isNotEmpty()) {
-            TextButton(
-                onClick = {
-                    val previous = undoStack.last()
-                    currentIndex = previous
-                    undoStack = undoStack.dropLast(1)
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 18.dp, bottom = 18.dp)
-            ) {
-                Text("Undo: letzten Witz zurueckholen", fontWeight = FontWeight.Black)
-            }
         }
     }
 }
@@ -723,7 +720,7 @@ private fun DetailScreen(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowBack, "Zurueck")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurueck")
             }
             Column {
                 Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 24.sp)
@@ -853,7 +850,7 @@ private fun ProfileScreen(
                 Text("Warum einloggen?", fontWeight = FontWeight.Black)
                 Text("- Profil und Stats sehen\n- Favoriten accountgebunden speichern\n- Konto später direkt wieder löschen", color = Comic.Muted, modifier = Modifier.padding(top = 8.dp))
             }
-            PrimaryButton("Login / Register", Icons.Filled.Login, onClick = onAuthRequired)
+            PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
             return@Column
         }
 
@@ -972,7 +969,7 @@ private fun ProfileScreen(
                 }
             }
         } else {
-            PrimaryButton("Login / Register", Icons.Filled.Login, onClick = onAuthRequired)
+            PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
         }
     }
 }
@@ -1245,16 +1242,12 @@ private fun JokeCard(
                 onClick = { isContentExpanded = !isContentExpanded }
             )
         }
-        TextButton(onClick = { onOpenProfile(joke.authorUsername) }) {
-            Text(
-                "von @${joke.authorUsername}",
-                color = Comic.Muted,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-        }
+        JokeMetaStrip(
+            authorUsername = joke.authorUsername,
+            favoriteCount = joke.favoriteCount,
+            onOpenProfile = onOpenProfile,
+            modifier = Modifier.padding(top = 12.dp)
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
             ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.weight(1f), onAuthRequired, showTitle = false)
             ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.weight(1f), onAuthRequired, showTitle = false)
@@ -1337,6 +1330,70 @@ private fun ProfileStatCard(title: String, value: String, accent: Color, modifie
 }
 
 @Composable
+private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolean) {
+    ComicCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill("Deck", Comic.YellowSoft)
+            Spacer(Modifier.width(8.dp))
+            Text("${(currentIndex % total) + 1} / $total", fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Spacer(Modifier.weight(1f))
+            Pill(if (undoAvailable) "Undo bereit" else "Swipe aktiv", if (undoAvailable) Comic.Pink else Comic.BlueSoft)
+        }
+        Text(
+            "Wie auf iOS: eine starke Karte im Fokus, Undo direkt darunter und nur ein klarer CTA fürs Nachladen.",
+            color = Comic.Muted,
+            fontWeight = FontWeight.SemiBold,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun RandomUndoButton(onUndo: () -> Unit) {
+    Surface(
+        onClick = onUndo,
+        shape = RoundedCornerShape(999.dp),
+        color = Comic.Pink,
+        border = BorderStroke(2.dp, Comic.Ink)
+    ) {
+        Text(
+            "Undo: letzten Witz zurückholen",
+            fontWeight = FontWeight.Black,
+            color = Comic.Ink,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun JokeMetaStrip(authorUsername: String, favoriteCount: Int, onOpenProfile: (String) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Surface(
+            color = Comic.Cream,
+            shape = RoundedCornerShape(999.dp),
+            border = BorderStroke(1.5.dp, Comic.Ink),
+            modifier = Modifier.clickable { onOpenProfile(authorUsername) }
+        ) {
+            Text(
+                "von @$authorUsername",
+                color = Comic.Muted,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+            )
+        }
+        Spacer(Modifier.weight(1f))
+        Pill("$favoriteCount Saves", Comic.YellowSoft)
+    }
+}
+
+@Composable
 private fun ProfileHeroCard(resolvedProfile: ProfileSummary, isOwnProfile: Boolean) {
     ComicCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1401,7 +1458,7 @@ private fun CommentComposerCard(onAuthRequired: () -> Unit) {
             lineHeight = 20.sp,
             modifier = Modifier.padding(top = 10.dp)
         )
-        PrimaryButton("Einloggen zum Kommentieren", Icons.Filled.Login, onClick = onAuthRequired)
+        PrimaryButton("Einloggen zum Kommentieren", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
     }
 }
 

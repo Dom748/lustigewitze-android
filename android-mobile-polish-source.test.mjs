@@ -35,6 +35,13 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Frische Pointen, klar sortiert und näher an iOS inszeniert\./, 'Feed header should adopt the more editorial iOS-style subtitle');
   assert.match(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter card should surface the active sort state in an editorial badge');
   assert.match(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter card should explain the tighter iOS-like structure');
+  assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
+  assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
+  assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
+  assert.match(mainActivity, /Pill\("\$favoriteCount Saves", Comic\.YellowSoft\)/, 'Joke cards should surface save count in the new meta strip');
+  assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.ArrowBack/, 'Detail back action should use the auto-mirrored back icon');
+  assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.Login/, 'Login actions should use the auto-mirrored login icon');
+  assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.List/, 'Feed tab should use the auto-mirrored list icon');
   assert.match(mainActivity, /ProfileHeroCard\(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile\)/, 'Profile should render a dedicated editorial hero card');
   assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft, Modifier\.weight\(1f\)\)/, 'Profile stats should sit in a two-column stitched row');
   assert.match(mainActivity, /private fun CommentThreadPanel\(visibleComments: List<Comment>, onOpenProfile: \(String\) -> Unit\)/, 'Detail comments should move into a dedicated thread panel helper');

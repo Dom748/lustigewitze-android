@@ -69,13 +69,14 @@ test("android random undo walks the local stack back instead of only resetting o
   assert.equal(source.includes("undoStack = (undoStack + currentIndex).takeLast(8)"), true, "Random advance should push the current index onto the undo stack");
   assert.equal(source.includes("val previous = undoStack.last()"), true, "Undo should restore the most recent stack entry");
   assert.equal(source.includes("undoStack = undoStack.dropLast(1)"), true, "Undo should pop the restored stack entry after going back");
-  assert.match(source, /if \(undoStack\.isNotEmpty\(\)\)[\s\S]*\.align\(Alignment\.BottomStart\)/, "Random undo should overlay at the bottom instead of taking column space");
+  assert.equal(source.includes("RandomQueueCard(currentIndex = currentIndex, total = jokes.size, undoAvailable = undoStack.isNotEmpty())"), true, "Random should show the queue/deck card above the main joke card");
+  assert.equal(source.includes("RandomUndoButton("), true, "Random undo should use its dedicated stitched helper beneath the card");
 });
 
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
   assert.equal(source.includes("var selectedProfileUsername by rememberSaveable"), true, "App shell should track the selected profile username");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
-  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(joke.authorUsername) })'), true, "Joke cards should open a profile when the author name is tapped");
+  assert.equal(source.includes("modifier = Modifier.clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author chip is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(comment.author) })'), true, "Detail comments should open a profile when the author name is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(name) })'), true, "Leaderboard rows should open a profile when the username is tapped");
 });
