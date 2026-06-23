@@ -675,8 +675,8 @@ private fun RandomScreen(
             }
 
             StatusPanel(
-                title = "Random kompakt",
-                message = "Unten bleibt nur noch ein klarer CTA fürs Nachladen. Voting und Merken passieren direkt auf der Karte."
+                title = "Random Flow",
+                message = "Ein klarer CTA unten, Swipe direkt auf der Karte und Undo als leise Rückhol-Option."
             )
         }
 
@@ -725,13 +725,10 @@ private fun DetailScreen(
             onAuthRequired = onAuthRequired,
             truncatesLongContent = false
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ComicAction("Teilen", Icons.Filled.Share, Comic.Blue, Modifier.weight(1f)) {}
-            ComicAction("Report", Icons.Filled.Flag, Comic.Pink, Modifier.weight(1f)) { onAuthRequired() }
-            ComicAction("User blockieren", Icons.Filled.Person, Comic.Yellow, Modifier.weight(1f)) {
-                onBlockAuthor(joke.authorId, joke.authorUsername)
-            }
-        }
+        SafetyPanel(
+            onAuthRequired = onAuthRequired,
+            onBlockAuthor = { onBlockAuthor(joke.authorId, joke.authorUsername) }
+        )
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
         visibleComments.forEach { comment ->
             ComicCard {
@@ -870,20 +867,12 @@ private fun ProfileScreen(
                     Text("@${resolvedProfile.username}", fontWeight = FontWeight.Black, fontSize = 20.sp)
                     Text("${resolvedProfile.favoriteCount} Favoriten · ${resolvedProfile.jokeCount} Jokes", color = Comic.Muted)
                 }
+                Pill(if (isOwnProfile) "Dein Profil" else "Creator", Comic.Yellow)
             }
         }
-        ComicCard {
-            Text("Lieblingskategorie", fontWeight = FontWeight.Black)
-            Text(resolvedProfile.favoriteCategory, color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
-        }
-        ComicCard {
-            Text("Ø Score / Joke", fontWeight = FontWeight.Black)
-            Text(resolvedProfile.averageScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
-        }
-        ComicCard {
-            Text("Gesamt-Score", fontWeight = FontWeight.Black)
-            Text(resolvedProfile.totalScore.toString(), color = Comic.Muted, modifier = Modifier.padding(top = 4.dp))
-        }
+        ProfileStatCard("Lieblingskategorie", resolvedProfile.favoriteCategory, Comic.YellowSoft)
+        ProfileStatCard("Ø Score / Joke", resolvedProfile.averageScore.toString(), Comic.BlueSoft)
+        ProfileStatCard("Gesamt-Score", resolvedProfile.totalScore.toString(), Comic.Pink)
         if (sessionStore.isLoadingProfile) {
             Text("Profil wird geladen...", color = Comic.Muted, fontWeight = FontWeight.Black)
         }
@@ -1246,19 +1235,19 @@ private fun JokeCard(
     }
 
     ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill(joke.category, Comic.Yellow)
-            Spacer(Modifier.weight(1f))
-            ScoreBadge(joke.score)
-        }
-        Text(
-            visibleContent,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Black,
-            lineHeight = 28.sp,
-            modifier = Modifier.padding(top = 14.dp)
-        )
-        if (shouldShowContentDisclosure) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Pill(joke.category, Comic.Yellow)
+        Spacer(Modifier.weight(1f))
+        ScoreBadge(joke.score)
+    }
+    Text(
+        visibleContent,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Black,
+        lineHeight = 32.sp,
+        modifier = Modifier.padding(top = 14.dp)
+    )
+if (shouldShowContentDisclosure) {
             JokeDisclosureButton(
                 expanded = isContentExpanded,
                 onClick = { isContentExpanded = !isContentExpanded }
@@ -1324,6 +1313,29 @@ private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
             labelColor = Comic.Ink
         )
     )
+}
+
+@Composable
+private fun ProfileStatCard(title: String, value: String, accent: Color) {
+    ComicCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill(title, accent)
+            Spacer(Modifier.width(10.dp))
+            Text(value, color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 18.sp)
+        }
+    }
+}
+
+@Composable
+private fun SafetyPanel(onAuthRequired: () -> Unit, onBlockAuthor: () -> Unit) {
+    ComicCard {
+        Text("Safety", fontWeight = FontWeight.Black, fontSize = 20.sp)
+        Text("Report und Block bleiben getrennt von der Leseansicht, damit der Detail-Screen ruhiger wirkt.", color = Comic.Muted, modifier = Modifier.padding(top = 6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+            ComicAction("Report", Icons.Filled.Flag, Comic.Pink, Modifier.weight(1f)) { onAuthRequired() }
+            ComicAction("User blockieren", Icons.Filled.Person, Comic.Yellow, Modifier.weight(1f), onClick = onBlockAuthor)
+        }
+    }
 }
 
 @Composable

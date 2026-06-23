@@ -27,6 +27,15 @@ test('android shell uses stitched bottom navigation and comic floating actions',
   assert.match(mainActivity, /NavigationBarItemDefaults\.colors\(/, 'Bottom navigation items should define comic selected/unselected colors');
   assert.match(mainActivity, /private fun FloatingComicButton\(/, 'App shell should use a custom comic floating action button helper');
   assert.match(mainActivity, /shape = RoundedCornerShape\(18\.dp\)/, 'Comic floating action buttons should use rounded-rectangle corners instead of default circles');
+  assert.match(mainActivity, /modifier = Modifier\.size\(58\.dp\)/, 'Comic floating action buttons should use a larger tap target inside the stitched shell');
+});
+
+test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
+  assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
+  assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft\)/, 'Profile should use dedicated stitched stat cards');
+  assert.match(mainActivity, /ProfileStatCard\("Ø Score \/ Joke", resolvedProfile\.averageScore\.toString\(\), Comic\.BlueSoft\)/, 'Profile stats should be visually grouped instead of isolated plain cards');
+  assert.match(mainActivity, /StatusPanel\(\s*title = "Random Flow"/, 'Random screen should use a cleaner stitched status panel title');
+  assert.match(mainActivity, /SafetyPanel\(/, 'Detail screen should move report and block controls into a dedicated safety panel');
 });
 
 test('android manifest wires a first-party launcher icon resource', () => {
