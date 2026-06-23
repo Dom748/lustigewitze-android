@@ -55,8 +55,12 @@ test("android account flow shows visible success feedback after saving", () => {
   assert.equal(source.includes("ComicAction(title = title, icon = icon, color = Comic.Yellow, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)"), true, "PrimaryButton should forward enabled state into the shared button renderer");
 });
 
-test("android random screen uses the new swipe-forward helper copy", () => {
-  assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should show the requested new subtitle");
+test("android random screen keeps only one primary next-joke action and no extra nope/top row", () => {
+  assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should keep the swipe-forward subtitle");
+  assert.equal(source.includes("ComicAction(\"Nope\""), false, "Random screen should not keep a dedicated Nope button row");
+  assert.equal(source.includes("ComicAction(\"Top\""), false, "Random screen should not keep a dedicated Top button row");
+  assert.equal(source.includes("ComicAction(\"Neu\""), false, "Random screen should not keep a third mini action button for next");
+  assert.equal(source.includes("PrimaryButton(\"Neuen Random-Witz laden\""), true, "Random screen should expose one clear full-width next-joke CTA");
 });
 
 test("android random undo walks the local stack back instead of only resetting one stale index", () => {

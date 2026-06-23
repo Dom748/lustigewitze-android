@@ -5,6 +5,8 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -167,7 +169,7 @@ class MobileApiClient {
         path: String,
         payload: JSONObject? = null,
         accessToken: String? = null
-    ): JSONObject {
+    ): JSONObject = withContext(Dispatchers.IO) {
         val connection = (URL(MOBILE_API_BASE_URL + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 15_000
@@ -214,7 +216,7 @@ class MobileApiClient {
                 )
             }
 
-            return json
+            json
         } finally {
             connection.disconnect()
         }

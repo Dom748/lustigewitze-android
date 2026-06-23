@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -80,6 +83,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -256,6 +260,7 @@ private object Comic {
     val Paper = Color(0xFFFFFCF2)
     val Panel = Color(0xFFEAE0D6)
     val Yellow = Color(0xFFFFD43B)
+    val YellowSoft = Color(0xFFFFE89A)
     val Blue = Color(0xFF5CB2FF)
     val BlueSoft = Color(0xFFC2E6FF)
     val Pink = Color(0xFFFF73AD)
@@ -290,7 +295,19 @@ private fun LustigeWitzeApp() {
             )
         }
     ) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        if (darkMode) {
+                            listOf(Comic.DarkBg, Comic.DarkPaper, Comic.DarkPanel)
+                        } else {
+                            listOf(Comic.Cream, Comic.YellowSoft.copy(alpha = 0.45f), Comic.Paper)
+                        }
+                    )
+                )
+        ) {
             AppShell(darkMode = darkMode, onToggleTheme = { darkMode = !darkMode })
         }
     }
@@ -379,7 +396,12 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
             }
         }
     ) { innerPadding ->
-        Box(Modifier.padding(innerPadding).fillMaxSize()) {
+        Box(
+            Modifier
+                .padding(innerPadding)
+                .statusBarsPadding()
+                .fillMaxSize()
+        ) {
             when (selectedTab) {
                 Tab.Feed -> FeedScreen(
                     jokes = visibleJokes,
@@ -509,19 +531,23 @@ private fun FeedScreen(
             feedError?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-                Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
-                Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
-                Segment("Reload", selected = false, onClick = onRefresh)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-                feedCategoryOptions.take(4).forEach { option ->
-                    Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
+            ComicCard(modifier = Modifier.padding(top = 14.dp)) {
+                Text("Filter", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text("Kategorien laufen jetzt horizontal, damit der Feed frei scrollt und das Stitch-Layout sauber bleibt.", color = Comic.Muted, modifier = Modifier.padding(top = 6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
+                    Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
+                    Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
+                    Segment("Reload", selected = false, onClick = onRefresh)
                 }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-                feedCategoryOptions.drop(4).forEach { option ->
-                    Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    feedCategoryOptions.forEach { option ->
+                        Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
+                    }
                 }
             }
             if (isLoadingFeed) {
@@ -609,15 +635,17 @@ private fun RandomScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .pointerInput(joke.id) {
-                        detectDragGestures(
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { _, dragAmount ->
+                                dragX += dragAmount
+                            },
                             onDragEnd = {
                                 if (abs(dragX) > 120f) {
                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     advanceRandomStack()
                                 }
                                 dragX = 0f
-                            },
-                            onDrag = { _, amount -> dragX += amount.x }
+                            }
                         )
                     }
                     .rotate(dragX / 40f)
@@ -625,23 +653,13 @@ private fun RandomScreen(
                 JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                ComicAction("Nope", Icons.Filled.ThumbDown, Comic.Red, Modifier.weight(1f)) {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    advanceRandomStack()
-                }
-                ComicAction("Top", Icons.Filled.ThumbUp, Comic.Yellow, Modifier.weight(1f)) {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onAuthRequired()
-                }
-                ComicAction("Neu", Icons.Filled.Refresh, Comic.Blue, Modifier.weight(1f)) {
-                    advanceRandomStack()
-                }
+            PrimaryButton("Neuen Random-Witz laden", Icons.Filled.Refresh) {
+                advanceRandomStack()
             }
 
             StatusPanel(
-                title = "Native Random-Flow",
-                message = "Swipe, Buttons, Undo und Haptik-Aequivalent sind als MVP-State vorhanden."
+                title = "Random kompakt",
+                message = "Unten bleibt nur noch ein klarer CTA fürs Nachladen. Voting und Merken passieren direkt auf der Karte."
             )
         }
 
@@ -1083,7 +1101,6 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
 @Composable
 private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String) -> Unit, onAuthRequired: () -> Unit) {
     var dragX by remember { mutableFloatStateOf(0f) }
-    var dragY by remember { mutableFloatStateOf(0f) }
     var viewerVote by rememberSaveable(joke.id) { mutableStateOf(joke.viewerVote) }
     var score by rememberSaveable(joke.id) { mutableStateOf(joke.score) }
     var feedbackLabel by rememberSaveable(joke.id) { mutableStateOf<String?>(null) }
@@ -1093,10 +1110,13 @@ private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String
         modifier = Modifier
             .fillMaxWidth()
             .pointerInput(joke.id, viewerVote, score) {
-                detectDragGestures(
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount ->
+                        dragX += dragAmount
+                    },
                     onDragEnd = {
-                        val voteValue = if (dragY < -120f) 5 else if (dragX > 120f) 1 else if (dragX < -120f) -1 else null
-                        if (abs(dragX) > 120f || dragY < -120f) {
+                        val voteValue = if (dragX > 120f) 1 else if (dragX < -120f) -1 else null
+                        if (abs(dragX) > 120f) {
                             voteValue?.let { value ->
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 val previousVote = viewerVote
@@ -1104,18 +1124,12 @@ private fun FeedSwipeCard(joke: Joke, onOpen: () -> Unit, onOpenProfile: (String
                                 viewerVote = value
                                 feedbackLabel = when (value) {
                                     1 -> "Like registriert"
-                                    -1 -> "Dislike registriert"
-                                    else -> "Stern registriert"
+                                    else -> "Dislike registriert"
                                 }
                                 onAuthRequired()
                             }
                         }
                         dragX = 0f
-                        dragY = 0f
-                    },
-                    onDrag = { _, amount ->
-                        dragX += amount.x
-                        dragY += amount.y
                     }
                 )
             }
@@ -1247,10 +1261,10 @@ private fun ComicCard(modifier: Modifier = Modifier, content: @Composable Column
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Comic.Panel, RoundedCornerShape(8.dp))
-            .padding(2.dp)
-            .background(Comic.Paper, RoundedCornerShape(7.dp))
-            .padding(16.dp),
+            .background(Comic.Ink, RoundedCornerShape(24.dp))
+            .padding(3.dp)
+            .background(Comic.Paper, RoundedCornerShape(24.dp))
+            .padding(18.dp),
         content = content
     )
 }
