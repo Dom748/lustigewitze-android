@@ -84,7 +84,10 @@ test("android routes usernames into profile navigation from cards comments and l
 test("android detail flow can block a user and surface blocked-user handling", () => {
   assert.equal(source.includes("var blockedAuthors by rememberSaveable"), true, "App shell should persist blocked authors");
   assert.equal(source.includes('ComicAction("User blockieren"'), true, "DetailScreen should expose a block-user action");
-  assert.equal(sessionStore.includes('blockMessage = "blocked_user:${result.blockedUserId}"'), true, "Blocking should surface a blocked_user status message for parity with iOS/web handling");
+  assert.equal(sessionStore.includes('suspend fun blockAuthorAndReport(authorId: String, authorUsername: String, jokeId: String): Boolean'), true, "Blocking should keep the blocked username available for success feedback");
+  assert.equal(sessionStore.includes('blockMessage = "blocked_user:${result.blockedUserId}:$authorUsername"'), true, "Blocking should surface a blocked_user marker plus username for Android feedback parity");
+  assert.equal(source.includes('val parts = message.split(":", limit = 3)'), true, "Android should decode blocked-user feedback markers without leaking raw ids into the UI");
+  assert.equal(source.includes('blockedUserMessage = blockedUsername?.let { "@${it} wurde blockiert und seine Witze werden ausgeblendet." }'), true, "Android should show a human-readable block success message");
   assert.equal(source.includes("filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }"), true, "Feed/random data should filter blocked authors out after blocking");
 });
 

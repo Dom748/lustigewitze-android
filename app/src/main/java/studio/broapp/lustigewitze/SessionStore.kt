@@ -192,7 +192,7 @@ class SessionStore(
         accountSuccessMessage = null
     }
 
-    suspend fun blockAuthorAndReport(authorId: String, jokeId: String): Boolean {
+    suspend fun blockAuthorAndReport(authorId: String, authorUsername: String, jokeId: String): Boolean {
         val token = accessToken ?: run {
             blockMessage = "Bitte logge dich ein, um User zu blockieren."
             return false
@@ -201,7 +201,7 @@ class SessionStore(
         blockMessage = null
         try {
             val result = apiClient.blockUser(authorId = authorId, jokeId = jokeId, accessToken = token)
-            blockMessage = "blocked_user:${result.blockedUserId}"
+            blockMessage = "blocked_user:${result.blockedUserId}:$authorUsername"
             return result.ok
         } catch (err: MobileApiException) {
             blockMessage = err.message

@@ -344,7 +344,11 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         val message = sessionStore.blockMessage ?: return@LaunchedEffect
         blockedUserMessage = message
         if (message.startsWith("blocked_user:")) {
-            val blockedKey = message.removePrefix("blocked_user:")
+            val parts = message.split(":", limit = 3)
+            val blockedKey = parts.getOrNull(1).orEmpty()
+            val blockedUsername = parts.getOrNull(2)?.takeIf { it.isNotBlank() }
+            blockedUserMessage = blockedUsername?.let { "@${it} wurde blockiert und seine Witze werden ausgeblendet." }
+                ?: "User wurde blockiert und seine Witze werden ausgeblendet."
             blockedAuthors = (blockedAuthors + blockedKey).distinct()
             selectedJoke = null
             selectedProfileUsername = null
@@ -471,7 +475,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 onAuthRequired = { showAuth = true },
                 onBlockAuthor = { authorId, authorUsername ->
                     scope.launch {
-                        val blocked = sessionStore.blockAuthorAndReport(authorId = authorId, jokeId = joke.id)
+                        val blocked = sessionStore.blockAuthorAndReport(authorId = authorId, authorUsername = authorUsername, jokeId = joke.id)
                         if (blocked) {
                             blockedAuthors = (blockedAuthors + listOf(authorId, authorUsername)).distinct()
                         }
