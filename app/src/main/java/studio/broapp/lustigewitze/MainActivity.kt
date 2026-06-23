@@ -1335,9 +1335,10 @@ private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modi
 }
 
 @Composable
-private fun ComicAction(title: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun ComicAction(title: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.height(48.dp),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = Comic.Ink),
@@ -1350,8 +1351,8 @@ private fun ComicAction(title: String, icon: ImageVector, color: Color, modifier
 }
 
 @Composable
-private fun PrimaryButton(title: String, icon: ImageVector, onClick: () -> Unit) {
-    ComicAction(title = title, icon = icon, color = Comic.Yellow, modifier = Modifier.fillMaxWidth(), onClick = onClick)
+private fun PrimaryButton(title: String, icon: ImageVector, enabled: Boolean = true, onClick: () -> Unit) {
+    ComicAction(title = title, icon = icon, color = Comic.Yellow, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
 }
 
 @Composable

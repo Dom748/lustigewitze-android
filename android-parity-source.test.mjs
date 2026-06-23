@@ -51,6 +51,8 @@ test("android account flow shows visible success feedback after saving", () => {
   assert.equal(sessionStore.includes('accountSuccessMessage = if (result.user.isGuest) "Gastkonto erfolgreich umgewandelt." else "Kontodaten gespeichert."'), true, "Successful account updates should set a user-facing success message");
   assert.equal(source.includes("sessionStore.accountSuccessMessage?.let"), true, "Profile screen should render the shared success feedback");
   assert.equal(source.includes("Zuletzt erfolgreich gespeichert."), true, "Profile screen should keep a quiet saved-state hint near the CTA");
+  assert.equal(source.includes("PrimaryButton(title: String, icon: ImageVector, enabled: Boolean = true, onClick: () -> Unit)"), true, "PrimaryButton helper should support enabled state for account-save loading guards");
+  assert.equal(source.includes("ComicAction(title = title, icon = icon, color = Comic.Yellow, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)"), true, "PrimaryButton should forward enabled state into the shared button renderer");
 });
 
 test("android random screen uses the new swipe-forward helper copy", () => {
