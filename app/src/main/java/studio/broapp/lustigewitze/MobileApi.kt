@@ -79,6 +79,12 @@ data class BlockUserResult(
     val reportId: String?
 )
 
+data class BlockedUserSummary(
+    val id: String,
+    val username: String,
+    val blockedAt: String
+)
+
 class MobileApiClient {
     suspend fun login(identifier: String, password: String): MobileAuthResult {
         val payload = JSONObject()
@@ -162,6 +168,28 @@ class MobileApiClient {
             blockedUserId = json.optString("blockedUserId"),
             reportId = json.optString("reportId").takeIf { !it.isNullOrBlank() }
         )
+    }
+
+    suspend fun getBlockedUsers(accessToken: String): List<BlockedUserSummary> {
+        val json = request("GET", "/api/mobile/blocked-users", accessToken = accessToken)
+        val items = json.optJSONArray("items")
+        if (items == null) return emptyList()
+        return buildList {
+            for (index in 0 until items.length()) {
+                val item = items.getJSONObject(index)
+                add(
+                    BlockedUserSummary(
+                        id = item.getString("id"),
+                        username = item.getString("username"),
+                        blockedAt = item.optString("blockedAt")
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun unblockUser(userId: String, accessToken: String) {
+        request("DELETE", "/api/mobile/users/$userId/block", accessToken = accessToken)
     }
 
     private suspend fun request(

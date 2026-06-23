@@ -50,6 +50,16 @@ class SessionStore(
         private set
     var isBlockingUser by mutableStateOf(false)
         private set
+    var blockedUsers by mutableStateOf<List<BlockedUserSummary>>(emptyList())
+        private set
+    var blockedUsersError by mutableStateOf<String?>(null)
+        private set
+    var blockedUsersSuccessMessage by mutableStateOf<String?>(null)
+        private set
+    var isLoadingBlockedUsers by mutableStateOf(false)
+        private set
+    var pendingBlockedUserId by mutableStateOf<String?>(null)
+        private set
     private var nextFeedCursor: Int? = null
 
     suspend fun login(identifier: String, password: String) {
@@ -192,6 +202,40 @@ class SessionStore(
         accountSuccessMessage = null
     }
 
+    suspend fun loadBlockedUsers() {
+        val token = accessToken ?: return
+        isLoadingBlockedUsers = true
+        blockedUsersError = null
+        try {
+            blockedUsers = apiClient.getBlockedUsers(token)
+        } catch (err: MobileApiException) {
+            blockedUsersError = err.message
+        } finally {
+            isLoadingBlockedUsers = false
+        }
+    }
+
+    suspend fun unblockUser(user: BlockedUserSummary): Boolean {
+        val token = accessToken ?: run {
+            blockedUsersError = "Bitte logge dich ein, um User zu entblocken."
+            return false
+        }
+        pendingBlockedUserId = user.id
+        blockedUsersError = null
+        blockedUsersSuccessMessage = null
+        return try {
+            apiClient.unblockUser(user.id, token)
+            blockedUsers = blockedUsers.filterNot { it.id == user.id }
+            blockedUsersSuccessMessage = "@${user.username} entblockt"
+            true
+        } catch (err: MobileApiException) {
+            blockedUsersError = err.message
+            false
+        } finally {
+            pendingBlockedUserId = null
+        }
+    }
+
     suspend fun blockAuthorAndReport(authorId: String, authorUsername: String, jokeId: String): Boolean {
         val token = accessToken ?: run {
             blockMessage = "Bitte logge dich ein, um User zu blockieren."
@@ -216,6 +260,7 @@ class SessionStore(
         profileError = null
         feedError = null
         blockMessage = null
+        blockedUsersError = null
     }
 
     private fun persistTokens(nextAccessToken: String, nextRefreshToken: String) {
@@ -232,6 +277,9 @@ class SessionStore(
         refreshToken = null
         currentUser = null
         loadedProfile = null
+        blockedUsers = emptyList()
+        blockedUsersError = null
+        blockedUsersSuccessMessage = null
         feedItems = emptyList()
         feedError = null
         nextFeedCursor = null

@@ -454,6 +454,9 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     accountDeleted = accountDeleted,
                     sessionStore = sessionStore,
                     onAuthRequired = { showAuth = true },
+                    onUnblockAuthor = { authorId, authorUsername ->
+                        blockedAuthors = blockedAuthors.filterNot { it == authorId || it == authorUsername }
+                    },
                     onDeleteAccount = {
                         scope.launch {
                             sessionStore.deleteAccount()
@@ -493,6 +496,9 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 accountDeleted = accountDeleted,
                 sessionStore = sessionStore,
                 onAuthRequired = { showAuth = true },
+                onUnblockAuthor = { authorId, authorUsername ->
+                    blockedAuthors = blockedAuthors.filterNot { it == authorId || it == authorUsername }
+                },
                 onDeleteAccount = {
                     scope.launch {
                         sessionStore.deleteAccount()
@@ -793,6 +799,7 @@ private fun ProfileScreen(
     accountDeleted: Boolean,
     sessionStore: SessionStore,
     onAuthRequired: () -> Unit,
+    onUnblockAuthor: (String, String) -> Unit,
     onDeleteAccount: () -> Unit
 ) {
     val profile = username?.let { requestedUsername ->
@@ -833,6 +840,12 @@ private fun ProfileScreen(
             sessionStore.loadOwnProfile()
         } else {
             sessionStore.loadProfile(username)
+        }
+    }
+
+    LaunchedEffect(isOwnProfile, username, sessionStore.accessToken) {
+        if (isOwnProfile && username != null) {
+            sessionStore.loadBlockedUsers()
         }
     }
 
@@ -972,8 +985,83 @@ private fun ProfileScreen(
                     }
                 }
             }
+            BlockedUsersCard(
+                items = sessionStore.blockedUsers,
+                isLoading = sessionStore.isLoadingBlockedUsers,
+                error = sessionStore.blockedUsersError,
+                successMessage = sessionStore.blockedUsersSuccessMessage,
+                pendingUserId = sessionStore.pendingBlockedUserId,
+                onReload = {
+                    scope.launch {
+                        sessionStore.loadBlockedUsers()
+                    }
+                },
+                onUnblock = { user ->
+                    scope.launch {
+                        val removed = sessionStore.unblockUser(user)
+                        if (removed) {
+                            onUnblockAuthor(user.id, user.username)
+                        }
+                    }
+                }
+            )
         } else {
             PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
+        }
+    }
+}
+
+@Composable
+private fun BlockedUsersCard(
+    items: List<BlockedUserSummary>,
+    isLoading: Boolean,
+    error: String?,
+    successMessage: String?,
+    pendingUserId: String?,
+    onReload: () -> Unit,
+    onUnblock: (BlockedUserSummary) -> Unit
+) {
+    ComicCard {
+        Text("Blockierte User", fontWeight = FontWeight.Black, fontSize = 22.sp)
+        Text(
+            "Hier kannst du gesperrte User wieder freigeben.",
+            color = Comic.Muted,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        successMessage?.let {
+            Text(it, color = Color(0xFF1B7F3B), modifier = Modifier.padding(top = 10.dp))
+        }
+        error?.let {
+            Text(it, color = Comic.Red, modifier = Modifier.padding(top = 10.dp))
+        }
+        when {
+            isLoading -> Text("Blockierte User werden geladen...", color = Comic.Muted, modifier = Modifier.padding(top = 12.dp))
+            items.isEmpty() -> Text("Du hast aktuell keine User blockiert.", color = Comic.Muted, modifier = Modifier.padding(top = 12.dp))
+            else -> Column(modifier = Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items.forEach { user ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("@${user.username}", fontWeight = FontWeight.Black)
+                            if (user.blockedAt.isNotBlank()) {
+                                Text("Blockiert seit ${user.blockedAt}", color = Comic.Muted, fontSize = 12.sp)
+                            }
+                        }
+                        PrimaryButton(
+                            label = if (pendingUserId == user.id) "Läuft..." else "Entblocken",
+                            icon = Icons.Filled.Lock,
+                            onClick = { onUnblock(user) },
+                            enabled = pendingUserId != user.id
+                        )
+                    }
+                }
+            }
+        }
+        TextButton(onClick = onReload, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Neu laden")
         }
     }
 }

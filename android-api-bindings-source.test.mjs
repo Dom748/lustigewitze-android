@@ -25,6 +25,11 @@ test("android ships a first-party mobile api client for auth profile feed and bl
   assert.match(apiClient, /"\/api\/mobile\/profile\/\$\{encodedUsername\}"/);
   assert.match(apiClient, /suspend fun blockUser\(authorId: String, jokeId: String, accessToken: String\)/);
   assert.match(apiClient, /"\/api\/mobile\/users\/\$authorId\/block"/);
+  assert.match(apiClient, /data class BlockedUserSummary\(/);
+  assert.match(apiClient, /suspend fun getBlockedUsers\(accessToken: String\)/);
+  assert.match(apiClient, /"\/api\/mobile\/blocked-users"/);
+  assert.match(apiClient, /suspend fun unblockUser\(userId: String, accessToken: String\)/);
+  assert.match(apiClient, /request\("DELETE", "\/api\/mobile\/users\/\$userId\/block"/);
 });
 
 test("android persists session tokens and exposes async auth account helpers", () => {
@@ -43,6 +48,9 @@ test("android persists session tokens and exposes async auth account helpers", (
   assert.match(sessionStore, /apiClient\.getFeed\(sort = sort, category = category/);
   assert.match(sessionStore, /suspend fun deleteAccount\(/);
   assert.match(sessionStore, /suspend fun blockAuthorAndReport\(/);
+  assert.match(sessionStore, /var blockedUsers by mutableStateOf<List<BlockedUserSummary>>\(emptyList\(\)\)/);
+  assert.match(sessionStore, /suspend fun loadBlockedUsers\(\)/);
+  assert.match(sessionStore, /suspend fun unblockUser\(user: BlockedUserSummary\): Boolean/);
 });
 
 test("android ui is wired to the real session store instead of local demo-only account actions", () => {
