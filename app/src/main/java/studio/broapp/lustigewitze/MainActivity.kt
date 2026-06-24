@@ -791,23 +791,57 @@ private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (Stri
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            ScreenHeader(title = "Rangliste", subtitle = "Top User und Top Witze im MVP.", badge = "Top")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-                Segment("User", selected = true) {}
-                Segment("Witze", selected = false) {}
-                Segment("Woche", selected = false) {}
+            ScreenHeader(title = "Rangliste", subtitle = "Top Witze und Top User direkt im stitched Feed-Look.", badge = "Top")
+            ComicCard(modifier = Modifier.padding(top = 14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Pill("User", Comic.YellowSoft)
+                    Pill("Witze", Comic.BlueSoft)
+                    Pill("Woche", Comic.Pink)
+                }
+                Text(
+                    "Wie auf iOS: oben nur die wichtigsten Modi, darunter direkt die stärksten Creator ohne Tabellen-Look.",
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+                    Segment("User", selected = true) {}
+                    Segment("Witze", selected = false) {}
+                    Segment("Woche", selected = false) {}
+                }
             }
         }
-        items(rows) { (name, score) ->
+        items(rows.withIndex().toList()) { indexed ->
+            val rank = indexed.index + 1
+            val name = indexed.value.first
+            val score = indexed.value.second
             ComicCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.EmojiEvents, null, tint = Comic.Orange)
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (rank == 1) Comic.Yellow else Comic.BlueSoft,
+                        border = BorderStroke(2.dp, Comic.Ink)
+                    ) {
+                        Text(
+                            "#$rank",
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         TextButton(onClick = { onOpenProfile(name) }) {
                             Text("@$name", fontWeight = FontWeight.Black, fontSize = 18.sp)
                         }
-                        Text("$score Punkte", color = Comic.Muted)
+                        Text("$score Punkte", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                            Pill("Zum Profil", Comic.Paper)
+                            Pill("Live Ranking", Comic.Pink)
+                        }
                     }
                     ScoreBadge(score)
                 }

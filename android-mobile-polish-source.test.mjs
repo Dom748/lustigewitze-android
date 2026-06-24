@@ -43,6 +43,9 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.Login/, 'Login actions should use the auto-mirrored login icon');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.List/, 'Feed tab should use the auto-mirrored list icon');
   assert.match(mainActivity, /ProfileHeroCard\(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile\)/, 'Profile should render a dedicated editorial hero card');
+  assert.match(mainActivity, /ScreenHeader\(title = "Rangliste", subtitle = "Top Witze und Top User direkt im stitched Feed-Look\.", badge = "Top"\)/, 'Leaderboard header should mirror the cross-platform stitched subtitle');
+  assert.match(mainActivity, /Pill\("Live Ranking", Comic\.Pink\)/, 'Leaderboard rows should expose a compact live-ranking utility chip');
+  assert.equal(mainActivity.includes("Wie auf iOS: oben nur die wichtigsten Modi, darunter direkt die stärksten Creator ohne Tabellen-Look."), true, 'Leaderboard should explain the tighter iOS-like ranking structure');
   assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft, Modifier\.weight\(1f\)\)/, 'Profile stats should sit in a two-column stitched row');
   assert.match(mainActivity, /private fun CommentThreadPanel\(visibleComments: List<Comment>, onOpenProfile: \(String\) -> Unit\)/, 'Detail comments should move into a dedicated thread panel helper');
   assert.match(mainActivity, /private fun CommentComposerCard\(onAuthRequired: \(\) -> Unit\)/, 'Detail composer should move into its own cleaner card');
