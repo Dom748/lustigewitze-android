@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -369,29 +370,39 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 color = if (darkMode) Comic.DarkPaper else Comic.Cream,
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                 border = BorderStroke(3.dp, Comic.Ink),
-                shadowElevation = 12.dp,
+                shadowElevation = 16.dp,
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                NavigationBar(
-                    containerColor = Color.Transparent,
-                    tonalElevation = 0.dp
-                ) {
-                    Tab.entries.forEach { tab ->
-                        NavigationBarItem(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, fontWeight = FontWeight.Black) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Comic.Ink,
-                                selectedTextColor = Comic.Ink,
-                                indicatorColor = Comic.Yellow,
-                                unselectedIconColor = Comic.Muted,
-                                unselectedTextColor = Comic.Muted
+                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Text(
+                        "Navigation",
+                        color = Comic.Muted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.6.sp,
+                        modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 2.dp)
+                    )
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp
+                    ) {
+                        Tab.entries.forEach { tab ->
+                            NavigationBarItem(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTab = tab },
+                                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                label = { Text(tab.label, fontWeight = FontWeight.Black) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Comic.Ink,
+                                    selectedTextColor = Comic.Ink,
+                                    indicatorColor = Comic.Yellow,
+                                    unselectedIconColor = Comic.Muted,
+                                    unselectedTextColor = Comic.Muted
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -547,7 +558,7 @@ private fun FeedScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            ScreenHeader(title = "LustigeWitze", subtitle = "Frische Pointen, klar sortiert und näher an iOS inszeniert.", badge = "Feed")
+            ScreenHeader(title = "Lustige Witze", subtitle = "Die besten Witze der Community.", badge = "Feed")
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
@@ -644,7 +655,7 @@ private fun RandomScreen(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
+            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
@@ -662,7 +673,7 @@ private fun RandomScreen(
             modifier = Modifier.fillMaxSize().padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir einen zufälligen Witz und swipe zum Nächsten.", badge = "Random")
+            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
@@ -728,16 +739,29 @@ private fun DetailScreen(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurueck")
+        ComicCard {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    onClick = onBack,
+                    shape = RoundedCornerShape(999.dp),
+                    color = Comic.Cream,
+                    border = BorderStroke(2.dp, Comic.Ink)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurueck", tint = Comic.Ink, modifier = Modifier.size(18.dp))
+                        Text("Zurück", color = Comic.Ink, fontWeight = FontWeight.Black)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 24.sp)
+                    Text("Lesen, teilen und moderieren in einer ruhigeren Ansicht.", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+                }
+                Pill("Detail", Comic.YellowSoft)
             }
-            Column {
-                Text("Witz Detail", fontWeight = FontWeight.Black, fontSize = 24.sp)
-                Text("Lesen, teilen und moderieren in einer ruhigeren Ansicht.", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.weight(1f))
-            Pill("Detail", Comic.YellowSoft)
         }
         JokeCard(
             joke = joke,
@@ -874,11 +898,15 @@ private fun ProfileScreen(
         val resolvedProfile = profile ?: return@Column
         ScreenHeader(title = "Profil", subtitle = resolvedProfile.headline, badge = if (isOwnProfile) "Account" else "Creator")
         ProfileHeroCard(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ProfileStatCard("Lieblingskategorie", resolvedProfile.favoriteCategory, Comic.YellowSoft, Modifier.weight(1f))
-            ProfileStatCard("Ø Score / Joke", resolvedProfile.averageScore.toString(), Comic.BlueSoft, Modifier.weight(1f))
+        ComicCard {
+            Text("Profil-Stats", fontWeight = FontWeight.Black, fontSize = 20.sp)
+            Text("Die wichtigsten Werte sitzen wie auf iOS direkt in einem ruhigen Stats-Block unter dem Hero.", color = Comic.Muted, modifier = Modifier.padding(top = 6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                ProfileStatCard("Lieblingskategorie", resolvedProfile.favoriteCategory, Comic.YellowSoft, Modifier.weight(1f))
+                ProfileStatCard("Ø Score / Joke", resolvedProfile.averageScore.toString(), Comic.BlueSoft, Modifier.weight(1f))
+            }
+            ProfileStatCard("Gesamt-Score", resolvedProfile.totalScore.toString(), Comic.Pink, Modifier.padding(top = 10.dp))
         }
-        ProfileStatCard("Gesamt-Score", resolvedProfile.totalScore.toString(), Comic.Pink)
         if (sessionStore.isLoadingProfile) {
             Text("Profil wird geladen...", color = Comic.Muted, fontWeight = FontWeight.Black)
         }
@@ -1039,23 +1067,34 @@ private fun BlockedUsersCard(
             items.isEmpty() -> Text("Du hast aktuell keine User blockiert.", color = Comic.Muted, modifier = Modifier.padding(top = 12.dp))
             else -> Column(modifier = Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items.forEach { user ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = Comic.Cream,
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(2.dp, Comic.Ink),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("@${user.username}", fontWeight = FontWeight.Black)
-                            if (user.blockedAt.isNotBlank()) {
-                                Text("Blockiert seit ${user.blockedAt}", color = Comic.Muted, fontSize = 12.sp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("@${user.username}", fontWeight = FontWeight.Black)
+                                if (user.blockedAt.isNotBlank()) {
+                                    Text("Blockiert seit ${user.blockedAt}", color = Comic.Muted, fontSize = 12.sp)
+                                }
+                                Pill("Aus Feed + Random versteckt", Comic.BlueSoft)
                             }
+                            Spacer(Modifier.width(10.dp))
+                            ComicAction(
+                                title = if (pendingUserId == user.id) "Läuft..." else "Entblocken",
+                                icon = Icons.Filled.Lock,
+                                color = Comic.Yellow,
+                                modifier = Modifier.width(140.dp),
+                                enabled = pendingUserId != user.id,
+                                onClick = { onUnblock(user) }
+                            )
                         }
-                        PrimaryButton(
-                            label = if (pendingUserId == user.id) "Läuft..." else "Entblocken",
-                            icon = Icons.Filled.Lock,
-                            onClick = { onUnblock(user) },
-                            enabled = pendingUserId != user.id
-                        )
                     }
                 }
             }
@@ -1341,9 +1380,9 @@ private fun JokeCard(
             modifier = Modifier.padding(top = 12.dp)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-            ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.weight(1f), onAuthRequired, showTitle = false)
-            ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.weight(1f), onAuthRequired, showTitle = false)
-            ReactionTile("Superlike", Icons.Filled.Star, joke.viewerVote == 5, Modifier.weight(1f), onAuthRequired, showTitle = false)
+            ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.width(52.dp), onAuthRequired, showTitle = false)
+            ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.width(52.dp), onAuthRequired, showTitle = false)
+            ReactionTile("Superlike", Icons.Filled.Star, joke.viewerVote == 5, Modifier.width(52.dp), onAuthRequired, showTitle = false)
             ReactionTile(if (joke.viewerFavorite) "Gemerkt" else "Merken", Icons.Filled.Bookmark, joke.viewerFavorite, Modifier.weight(1f), onAuthRequired)
         }
     }
@@ -1352,26 +1391,26 @@ private fun JokeCard(
 @Composable
 private fun ScreenHeader(title: String, subtitle: String, badge: String) {
     Surface(
-        color = Comic.YellowSoft,
+        color = Comic.Paper,
         shape = RoundedCornerShape(28.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
-                .background(Comic.Paper, RoundedCornerShape(25.dp))
                 .padding(4.dp)
-                .background(Comic.YellowSoft.copy(alpha = 0.72f), RoundedCornerShape(22.dp))
-                .padding(horizontal = 16.dp, vertical = 15.dp)
+                .border(BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.5f)), RoundedCornerShape(24.dp))
+                .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Pill(badge, Comic.Pink)
-                Spacer(Modifier.weight(1f))
-                Pill("Stitch", Comic.Yellow)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                    Text(title, fontSize = 32.sp, fontWeight = FontWeight.Black, lineHeight = 36.sp)
+                    Text(subtitle, color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Pill(badge, Comic.Yellow)
             }
-            Text(title, fontSize = 34.sp, fontWeight = FontWeight.Black, lineHeight = 38.sp)
-            Text(subtitle, color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 22.sp)
         }
     }
 }
@@ -1432,7 +1471,7 @@ private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolea
             Pill(if (undoAvailable) "Undo bereit" else "Swipe aktiv", if (undoAvailable) Comic.Pink else Comic.BlueSoft)
         }
         Text(
-            "Wie auf iOS: eine starke Karte im Fokus, Undo direkt darunter und nur ein klarer CTA fürs Nachladen.",
+            "Eine Karte im Fokus, ein ruhiger Undo-Chip darunter und dann direkt der nächste Treffer.",
             color = Comic.Muted,
             fontWeight = FontWeight.SemiBold,
             lineHeight = 20.sp,
@@ -1450,7 +1489,7 @@ private fun RandomUndoButton(onUndo: () -> Unit) {
         border = BorderStroke(2.dp, Comic.Ink)
     ) {
         Text(
-            "Undo: letzten Witz zurückholen",
+            "Undo zurückholen",
             fontWeight = FontWeight.Black,
             color = Comic.Ink,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
@@ -1474,14 +1513,14 @@ private fun JokeMetaStrip(authorUsername: String, favoriteCount: Int, onOpenProf
             Text(
                 "von @$authorUsername",
                 color = Comic.Muted,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
             )
         }
         Spacer(Modifier.weight(1f))
-        Pill("$favoriteCount Saves", Comic.YellowSoft)
+        Pill("$favoriteCount Merker", Comic.BlueSoft)
     }
 }
 
@@ -1577,8 +1616,8 @@ private fun ScoreBadge(score: Int) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
         ) {
-            Text("Score", fontWeight = FontWeight.Black, fontSize = 10.sp, color = Comic.Ink)
-            Text(score.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = Comic.Ink)
+            Text("🔥 Score", fontWeight = FontWeight.Black, fontSize = 10.sp, color = Comic.Ink)
+            Text(if (score > 0) "+$score" else score.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = Comic.Ink)
         }
     }
 }
@@ -1616,24 +1655,24 @@ private fun JokeDisclosureButton(expanded: Boolean, onClick: () -> Unit) {
 @Composable
 private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit, showTitle: Boolean = true) {
     Surface(
-        color = if (active) Comic.Yellow else Comic.BlueSoft,
-        shape = RoundedCornerShape(16.dp),
+        color = if (active) Comic.Yellow else Comic.Cream,
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(2.dp, Comic.Ink),
         modifier = modifier.clickable(onClick = onClick)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(vertical = if (showTitle) 10.dp else 12.dp, horizontal = 6.dp)
+            modifier = Modifier.padding(vertical = if (showTitle) 10.dp else 11.dp, horizontal = 6.dp)
         ) {
             Icon(
                 icon,
                 title,
                 tint = if (active) Comic.Red else Comic.Ink,
-                modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
+                modifier = Modifier.size(if (showTitle) 24.dp else 28.dp)
             )
             if (showTitle) {
-                Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                Text(title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
             }
         }
     }

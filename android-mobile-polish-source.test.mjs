@@ -32,13 +32,13 @@ test('android shell uses stitched bottom navigation and comic floating actions',
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
   assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
-  assert.match(mainActivity, /Frische Pointen, klar sortiert und näher an iOS inszeniert\./, 'Feed header should adopt the more editorial iOS-style subtitle');
+  assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header should adopt the more editorial iOS-style subtitle');
   assert.match(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter card should surface the active sort state in an editorial badge');
   assert.match(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter card should explain the tighter iOS-like structure');
   assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
   assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
   assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
-  assert.match(mainActivity, /Pill\("\$favoriteCount Saves", Comic\.YellowSoft\)/, 'Joke cards should surface save count in the new meta strip');
+  assert.match(mainActivity, /Pill\("\$favoriteCount Merker", Comic\.BlueSoft\)/, 'Joke cards should surface save count in the new meta strip');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.ArrowBack/, 'Detail back action should use the auto-mirrored back icon');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.Login/, 'Login actions should use the auto-mirrored login icon');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.List/, 'Feed tab should use the auto-mirrored list icon');
@@ -48,9 +48,14 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /private fun CommentComposerCard\(onAuthRequired: \(\) -> Unit\)/, 'Detail composer should move into its own cleaner card');
   assert.match(mainActivity, /Text\("\$\{visibleComments\.size\} Einträge", color = Comic\.Muted, fontWeight = FontWeight\.SemiBold\)/, 'Comment panel should summarize the visible thread size');
   assert.match(mainActivity, /Zum Schreiben bitte kurz einloggen — die Detailansicht bleibt sonst bewusst sauber und lesbar\./, 'Comment composer card should explain the cleaner login gate');
-  assert.match(mainActivity, /StatusPanel\(\s*title = "Random Flow"/, 'Random screen should use a cleaner stitched status panel title');
+  assert.match(mainActivity, /StatusPanel\(\"Random bereinigt\"/, 'Random screen should use a cleaner stitched status panel title');
   assert.match(mainActivity, /SafetyPanel\(/, 'Detail screen should move report and block controls into a dedicated safety panel');
-  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Surface\([\s\S]*color = Comic\.YellowSoft/, 'Screen headers should render inside a stitched hero surface');
+  assert.match(mainActivity, /Text\("Zurück", color = Comic\.Ink, fontWeight = FontWeight\.Black\)/, 'Detail screen should wrap the back action into a compact stitched pill');
+  assert.match(mainActivity, /Pill\("Aus Feed \+ Random versteckt", Comic\.BlueSoft\)/, 'Blocked-users rows should explain the cross-surface effect in a compact badge');
+  assert.match(mainActivity, /Text\("Profil-Stats", fontWeight = FontWeight\.Black, fontSize = 20\.sp\)/, 'Profile should group key stats into a calmer stats card under the hero');
+  assert.equal(mainActivity.includes('"Navigation"'), true, 'Bottom navigation should surface a small label above the tray');
+  assert.equal(mainActivity.includes('letterSpacing = 0.6.sp'), true, 'Bottom navigation label should use the tighter uppercase tray styling');
+  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Surface\([\s\S]*color = Comic\.Paper/, 'Screen headers should render inside a stitched hero surface');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });

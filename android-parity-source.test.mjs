@@ -56,7 +56,7 @@ test("android account flow shows visible success feedback after saving", () => {
 });
 
 test("android random screen keeps only one primary next-joke action and no extra nope/top row", () => {
-  assert.equal(source.includes("Zieh dir einen zufälligen Witz und swipe zum Nächsten."), true, "Random screen should keep the swipe-forward subtitle");
+  assert.equal(source.includes("Zieh dir eine Überraschung aus dem Witze-Stapel."), true, "Random screen should keep the swipe-forward subtitle");
   assert.equal(source.includes("ComicAction(\"Nope\""), false, "Random screen should not keep a dedicated Nope button row");
   assert.equal(source.includes("ComicAction(\"Top\""), false, "Random screen should not keep a dedicated Top button row");
   assert.equal(source.includes("ComicAction(\"Neu\""), false, "Random screen should not keep a third mini action button for next");
@@ -90,7 +90,7 @@ test("android detail flow can block a user and surface blocked-user handling", (
   assert.equal(source.includes('blockedUserMessage = blockedUsername?.let { "@${it} wurde blockiert und seine Witze werden ausgeblendet." }'), true, "Android should show a human-readable block success message");
   assert.equal(source.includes("filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }"), true, "Feed/random data should filter blocked authors out after blocking");
   assert.equal(source.includes('Text("Blockierte User", fontWeight = FontWeight.Black, fontSize = 22.sp)'), true, "Profile should expose a visible blocked-users section");
-  assert.equal(source.includes('label = if (pendingUserId == user.id) "Läuft..." else "Entblocken"'), true, "Blocked users should expose a direct unblock CTA with loading state");
+  assert.equal(source.includes('title = if (pendingUserId == user.id) "Läuft..." else "Entblocken"'), true, "Blocked users should expose a direct unblock CTA with loading state");
   assert.equal(source.includes('onUnblockAuthor = { authorId, authorUsername ->'), true, "App shell should remove unblocked authors from the local hidden-author list");
   assert.equal(sessionStore.includes('suspend fun loadBlockedUsers()'), true, "SessionStore should load the blocked-users list for the profile");
   assert.equal(sessionStore.includes('suspend fun unblockUser(user: BlockedUserSummary): Boolean'), true, "SessionStore should expose an unblock helper");
