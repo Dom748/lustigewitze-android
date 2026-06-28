@@ -17,6 +17,13 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.doesNotMatch(mainActivity, /Stern registriert/);
   assert.doesNotMatch(mainActivity, /Swipe, Buttons, Undo und Haptik-Aequivalent sind als MVP-State vorhanden\./);
   assert.match(mainActivity, /showTitle = false/);
+  assert.match(mainActivity, /Modifier\.width\(66\.dp\)/);
+  assert.match(mainActivity, /compactHorizontalPadding = 3\.dp/);
+  assert.match(mainActivity, /compactVerticalPadding = 2\.dp/);
+  assert.match(mainActivity, /compactHorizontalPadding: Dp = 6\.dp/);
+  assert.match(mainActivity, /compactVerticalPadding: Dp = 11\.dp/);
+  assert.match(mainActivity, /vertical = if \(showTitle\) 10\.dp else compactVerticalPadding/);
+  assert.match(mainActivity, /horizontal = if \(showTitle\) 6\.dp else compactHorizontalPadding/);
   assert.match(mainActivity, /Modifier\.size\(if \(showTitle\) 24\.dp else 32\.dp\)/);
   assert.match(mainActivity, /else "Merken"/);
   assert.match(mainActivity, /SwipeVoteBadge/);

@@ -95,6 +95,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -1415,9 +1416,36 @@ private fun JokeCard(
             modifier = Modifier.padding(top = 12.dp)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-            ReactionTile("Top", Icons.Filled.ThumbUp, joke.viewerVote == 1, Modifier.width(52.dp), onAuthRequired, showTitle = false)
-            ReactionTile("Runter", Icons.Filled.ThumbDown, joke.viewerVote == -1, Modifier.width(52.dp), onAuthRequired, showTitle = false)
-            ReactionTile("Superlike", Icons.Filled.Star, joke.viewerVote == 5, Modifier.width(52.dp), onAuthRequired, showTitle = false)
+            ReactionTile(
+                "Top",
+                Icons.Filled.ThumbUp,
+                joke.viewerVote == 1,
+                Modifier.width(66.dp),
+                onAuthRequired,
+                showTitle = false,
+                compactHorizontalPadding = 3.dp,
+                compactVerticalPadding = 2.dp
+            )
+            ReactionTile(
+                "Runter",
+                Icons.Filled.ThumbDown,
+                joke.viewerVote == -1,
+                Modifier.width(66.dp),
+                onAuthRequired,
+                showTitle = false,
+                compactHorizontalPadding = 3.dp,
+                compactVerticalPadding = 2.dp
+            )
+            ReactionTile(
+                "Superlike",
+                Icons.Filled.Star,
+                joke.viewerVote == 5,
+                Modifier.width(66.dp),
+                onAuthRequired,
+                showTitle = false,
+                compactHorizontalPadding = 3.dp,
+                compactVerticalPadding = 2.dp
+            )
             ReactionTile(if (joke.viewerFavorite) "Gemerkt" else "Merken", Icons.Filled.Bookmark, joke.viewerFavorite, Modifier.weight(1f), onAuthRequired)
         }
     }
@@ -1688,7 +1716,16 @@ private fun JokeDisclosureButton(expanded: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit, showTitle: Boolean = true) {
+private fun ReactionTile(
+    title: String,
+    icon: ImageVector,
+    active: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+    showTitle: Boolean = true,
+    compactHorizontalPadding: Dp = 6.dp,
+    compactVerticalPadding: Dp = 11.dp
+) {
     Surface(
         color = if (active) Comic.Yellow else Comic.Cream,
         shape = RoundedCornerShape(14.dp),
@@ -1698,13 +1735,16 @@ private fun ReactionTile(title: String, icon: ImageVector, active: Boolean, modi
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(vertical = if (showTitle) 10.dp else 11.dp, horizontal = 6.dp)
+            modifier = Modifier.padding(
+                vertical = if (showTitle) 10.dp else compactVerticalPadding,
+                horizontal = if (showTitle) 6.dp else compactHorizontalPadding
+            )
         ) {
             Icon(
                 icon,
                 title,
                 tint = if (active) Comic.Red else Comic.Ink,
-                modifier = Modifier.size(if (showTitle) 24.dp else 28.dp)
+                modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
             )
             if (showTitle) {
                 Text(title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
