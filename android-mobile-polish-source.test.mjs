@@ -47,10 +47,10 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Pill\("Live Ranking", Comic\.Pink\)/, 'Leaderboard rows should expose a compact live-ranking utility chip');
   assert.equal(mainActivity.includes("Wie auf iOS: oben nur die wichtigsten Modi, darunter direkt die stärksten Creator ohne Tabellen-Look."), true, 'Leaderboard should explain the tighter iOS-like ranking structure');
   assert.match(mainActivity, /ProfileStatCard\("Lieblingskategorie", resolvedProfile\.favoriteCategory, Comic\.YellowSoft, Modifier\.weight\(1f\)\)/, 'Profile stats should sit in a two-column stitched row');
-  assert.match(mainActivity, /private fun CommentThreadPanel\(visibleComments: List<Comment>, onOpenProfile: \(String\) -> Unit\)/, 'Detail comments should move into a dedicated thread panel helper');
-  assert.match(mainActivity, /private fun CommentComposerCard\(onAuthRequired: \(\) -> Unit\)/, 'Detail composer should move into its own cleaner card');
-  assert.match(mainActivity, /Text\("\$\{visibleComments\.size\} Einträge", color = Comic\.Muted, fontWeight = FontWeight\.SemiBold\)/, 'Comment panel should summarize the visible thread size');
-  assert.match(mainActivity, /Zum Schreiben bitte kurz einloggen — die Detailansicht bleibt sonst bewusst sauber und lesbar\./, 'Comment composer card should explain the cleaner login gate');
+  assert.match(mainActivity, /private fun CommentThreadPanel\(\s*comments: List<MobileComment>,\s*isLoading: Boolean,\s*errorMessage: String\?,\s*onOpenProfile: \(String\) -> Unit\s*\)/, 'Detail comments should move into a dedicated thread panel helper');
+  assert.match(mainActivity, /private fun CommentComposerCard\(sessionStore: SessionStore, jokeId: String, onAuthRequired: \(\) -> Unit\)/, 'Detail composer should move into its own cleaner card');
+  assert.match(mainActivity, /Text\("\$\{comments\.size\} Einträge", color = Comic\.Muted, fontWeight = FontWeight\.SemiBold\)/, 'Comment panel should summarize the visible thread size');
+  assert.match(mainActivity, /Zum Schreiben brauchst du einen Account — lesen bleibt ohne Login offen\./, 'Comment composer card should explain the cleaner login gate');
   assert.match(mainActivity, /StatusPanel\(\"Random bereinigt\"/, 'Random screen should use a cleaner stitched status panel title');
   assert.match(mainActivity, /SafetyPanel\(/, 'Detail screen should move report and block controls into a dedicated safety panel');
   assert.match(mainActivity, /Text\("Zurück", color = Comic\.Ink, fontWeight = FontWeight\.Black\)/, 'Detail screen should wrap the back action into a compact stitched pill');
@@ -58,7 +58,7 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Text\("Profil-Stats", fontWeight = FontWeight\.Black, fontSize = 20\.sp\)/, 'Profile should group key stats into a calmer stats card under the hero');
   assert.equal(mainActivity.includes('"Navigation"'), true, 'Bottom navigation should surface a small label above the tray');
   assert.equal(mainActivity.includes('letterSpacing = 0.6.sp'), true, 'Bottom navigation label should use the tighter uppercase tray styling');
-  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Surface\([\s\S]*color = Comic\.Paper/, 'Screen headers should render inside a stitched hero surface');
+  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should keep badge top-aligned and allow two-line titles/subtitles');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });

@@ -1481,13 +1481,29 @@ private fun ScreenHeader(title: String, subtitle: String, badge: String) {
                 .border(BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.5f)), RoundedCornerShape(24.dp))
                 .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.Top) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                    Text(title, fontSize = 32.sp, fontWeight = FontWeight.Black, lineHeight = 36.sp)
-                    Text(subtitle, color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp)
+                    Text(
+                        title,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 36.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        subtitle,
+                        color = Comic.Muted,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 21.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Spacer(Modifier.width(12.dp))
-                Pill(badge, Comic.Yellow)
+                Box(modifier = Modifier.padding(top = 2.dp)) {
+                    Pill(badge, Comic.Yellow)
+                }
             }
         }
     }
