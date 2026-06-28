@@ -17,7 +17,7 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.doesNotMatch(mainActivity, /Stern registriert/);
   assert.doesNotMatch(mainActivity, /Swipe, Buttons, Undo und Haptik-Aequivalent sind als MVP-State vorhanden\./);
   assert.match(mainActivity, /showTitle = false/);
-  assert.match(mainActivity, /Modifier\.width\(66\.dp\)/);
+  assert.match(mainActivity, /Modifier\.width\(72\.dp\)/);
   assert.match(mainActivity, /compactHorizontalPadding = 3\.dp/);
   assert.match(mainActivity, /compactVerticalPadding = 2\.dp/);
   assert.match(mainActivity, /compactHorizontalPadding: Dp = 6\.dp/);
@@ -25,12 +25,12 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.match(mainActivity, /vertical = if \(showTitle\) 10\.dp else compactVerticalPadding/);
   assert.match(mainActivity, /horizontal = if \(showTitle\) 6\.dp else compactHorizontalPadding/);
   assert.match(mainActivity, /Modifier\.size\(if \(showTitle\) 24\.dp else 32\.dp\)/);
+  assert.match(mainActivity, /else "Merken"/);
+  assert.match(mainActivity, /Modifier[\s\S]*\.weight\(1f\)[\s\S]*\.padding\(start = 8\.dp\)/);
   assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 8\.dp/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Lustige Witze"/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Zufallswitz"/);
   assert.match(mainActivity, /statusBarsPadding\(\)/);
-  assert.match(mainActivity, /else "Merken"/);
-  assert.match(mainActivity, /Modifier[\s\S]*\.weight\(1f\)[\s\S]*\.padding\(start = 8\.dp\)/);
   assert.match(mainActivity, /SwipeVoteBadge/);
   assert.match(mainActivity, /label = "TOP"/);
   assert.match(mainActivity, /Icons\.Filled\.ThumbUp/);
