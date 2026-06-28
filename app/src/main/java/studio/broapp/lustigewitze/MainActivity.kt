@@ -1446,7 +1446,15 @@ private fun JokeCard(
                 compactHorizontalPadding = 3.dp,
                 compactVerticalPadding = 2.dp
             )
-            ReactionTile(if (joke.viewerFavorite) "Gemerkt" else "Merken", Icons.Filled.Bookmark, joke.viewerFavorite, Modifier.weight(1f), onAuthRequired)
+            ReactionTile(
+                if (joke.viewerFavorite) "Gemerkt" else "Merken",
+                Icons.Filled.Bookmark,
+                joke.viewerFavorite,
+                Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp),
+                onAuthRequired
+            )
         }
     }
 }
