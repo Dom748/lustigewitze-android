@@ -148,6 +148,7 @@ private const val STANDARD_JOKE_MAX_CHARS = 420
 private const val LONG_JOKE_MAX_CHARS = 2500
 private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden automatisch als Lange Witze gespeichert."
 private const val JOKE_CARD_PREVIEW_LIMIT = 400
+private val MOBILE_HEADER_TOP_INSET = 8.dp
 
 private val demoJokes = listOf(
     Joke(
@@ -560,7 +561,9 @@ private fun FeedScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            ScreenHeader(title = "Lustige Witze", subtitle = "Die besten Witze der Community.", badge = "Feed")
+            Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
+                ScreenHeader(title = "Lustige Witze", subtitle = "Die besten Witze der Community.", badge = "Feed")
+            }
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
@@ -657,7 +660,9 @@ private fun RandomScreen(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
+            Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
+                ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
+            }
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
@@ -675,7 +680,9 @@ private fun RandomScreen(
             modifier = Modifier.fillMaxSize().padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
+            Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
+                ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
+            }
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
