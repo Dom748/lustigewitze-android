@@ -88,3 +88,22 @@ test("android account deletion copy reflects the real mobile api flow", () => {
   assert.doesNotMatch(mainActivity, /Demo-State: Account wurde lokal als gelöscht markiert\./);
   assert.doesNotMatch(mainActivity, /Dieser Demo-Flow markiert den Account lokal als gelöscht\./);
 });
+
+test("android detail screen mirrors ios comment api wiring instead of a read-only placeholder", () => {
+  assert.match(apiClient, /data class MobileCommentResponse\(/);
+  assert.match(apiClient, /data class MobileComment\(/);
+  assert.match(apiClient, /suspend fun getComments\(jokeId: String, accessToken: String\? = null\)/);
+  assert.match(apiClient, /"\/api\/mobile\/jokes\/\$jokeId\/comments"/);
+  assert.match(apiClient, /suspend fun addComment\(jokeId: String, content: String, accessToken: String\)/);
+  assert.match(apiClient, /request\("POST", "\/api\/mobile\/jokes\/\$jokeId\/comments"/);
+  assert.match(sessionStore, /var detailComments by mutableStateOf<List<MobileComment>>\(emptyList\(\)\)/);
+  assert.match(sessionStore, /var isPostingComment by mutableStateOf\(false\)/);
+  assert.match(sessionStore, /suspend fun loadComments\(jokeId: String\)/);
+  assert.match(sessionStore, /suspend fun addComment\(jokeId: String, content: String\): Boolean/);
+  assert.match(mainActivity, /sessionStore\.loadComments\(joke\.id\)/);
+  assert.match(mainActivity, /CommentThreadPanel\(comments = sessionStore\.detailComments/);
+  assert.match(mainActivity, /CommentComposerCard\(sessionStore = sessionStore, jokeId = joke\.id, onAuthRequired = onAuthRequired\)/);
+  assert.doesNotMatch(mainActivity, /readOnly = true/);
+  assert.match(mainActivity, /placeholder = \{ Text\("Kommentar schreiben\.\.\."\) \}/);
+  assert.match(mainActivity, /PrimaryButton\("Senden", Icons\.Filled\.Share/);
+});

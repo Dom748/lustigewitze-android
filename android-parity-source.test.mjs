@@ -77,7 +77,7 @@ test("android routes usernames into profile navigation from cards comments and l
   assert.equal(source.includes("var selectedProfileUsername by rememberSaveable"), true, "App shell should track the selected profile username");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
   assert.equal(source.includes("modifier = Modifier.clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author chip is tapped");
-  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(comment.author) })'), true, "Detail comments should open a profile when the author name is tapped");
+  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(comment.author.username) })'), true, "Detail comments should open a profile when the author name is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(name) })'), true, "Leaderboard rows should open a profile when the username is tapped");
 });
 
@@ -89,7 +89,10 @@ test("android detail flow can block a user and surface blocked-user handling", (
   assert.equal(source.includes('val parts = message.split(":", limit = 3)'), true, "Android should decode blocked-user feedback markers without leaking raw ids into the UI");
   assert.equal(source.includes('blockedUserMessage = blockedUsername?.let { "@${it} wurde blockiert und seine Witze werden ausgeblendet." }'), true, "Android should show a human-readable block success message");
   assert.equal(source.includes("filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }"), true, "Feed/random data should filter blocked authors out after blocking");
-  assert.equal(source.includes('Text("Blockierte User", fontWeight = FontWeight.Black, fontSize = 22.sp)'), true, "Profile should expose a visible blocked-users section");
+  assert.equal(source.includes("BlockedUsersEntryCard("), true, "Profile should expose a dedicated blocked-users entry card like iOS");
+  assert.equal(source.includes("var showBlockedUsers by rememberSaveable"), true, "Profile should track a dedicated blocked-users surface state");
+  assert.equal(source.includes("BlockedUsersScreen("), true, "Profile should open a dedicated blocked-users screen instead of only embedding a utility list");
+  assert.equal(source.includes('ScreenHeader(title = "Blockierte User", subtitle = "Hier siehst du alle User, die du blockiert hast.", badge = "Sicherheit")'), true, "Blocked users screen should mirror the iOS hero copy");
   assert.equal(source.includes('title = if (pendingUserId == user.id) "Läuft..." else "Entblocken"'), true, "Blocked users should expose a direct unblock CTA with loading state");
   assert.equal(source.includes('onUnblockAuthor = { authorId, authorUsername ->'), true, "App shell should remove unblocked authors from the local hidden-author list");
   assert.equal(sessionStore.includes('suspend fun loadBlockedUsers()'), true, "SessionStore should load the blocked-users list for the profile");
@@ -108,4 +111,26 @@ test("android overview cards collapse long jokes while detail keeps full text", 
   assert.equal(source.includes("Comic.Yellow.copy(alpha = 0.88f)"), true, "Disclosure pill should use the softer yellow fill like iOS");
   assert.equal(source.includes("BorderStroke(1.5.dp, Comic.Ink)"), true, "Disclosure pill should use the lighter iOS-like outline");
   assert.equal(source.includes("truncatesLongContent = false"), true, "DetailScreen should keep full joke text visible");
+});
+
+test("android random and feed cards expose ios-style comment preview metadata and inline random commenting", () => {
+  assert.equal(mobileApi.includes("data class MobileCommentPreview("), true, "Mobile API client should parse the comment preview payload from the mobile feed");
+  assert.equal(mobileApi.includes("val commentCount: Int"), true, "Mobile jokes should keep the live comment count");
+  assert.equal(mobileApi.includes("val commentPreview: MobileCommentPreview?"), true, "Mobile jokes should keep the preview comment payload");
+  assert.equal(source.includes("val commentCount: Int = 0,"), true, "Android app jokes should carry a comment-count field");
+  assert.equal(source.includes("val commentPreview: MobileCommentPreview? = null"), true, "Android app jokes should carry an optional preview comment");
+  assert.equal(source.includes("commentCount = commentCount,"), true, "Feed mapping should preserve the comment count from the mobile API");
+  assert.equal(source.includes("commentPreview = commentPreview"), true, "Feed mapping should preserve the preview comment from the mobile API");
+  assert.equal(source.includes("RandomInlineCommentSection("), true, "Random screen should expose an inline comment section like iOS");
+  assert.equal(source.includes("sessionStore.loadComments(joke.id)"), true, "Random inline comment section should load the current joke comments");
+  assert.equal(source.includes("CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)"), true, "Random inline comment section should reuse the real mobile comment composer");
+  assert.equal(source.includes("JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)"), true, "Cards should render a compact preview row when a mobile comment preview exists");
+  assert.equal(source.includes("Mehr Kommentare"), true, "Android should expose a visible more-comments affordance like iOS");
+});
+
+test("android random cards expose direct zum-witz and teilen actions instead of only implicit card taps", () => {
+  assert.equal(source.includes("RandomCardActionRow("), true, "Random flow should render a dedicated action row beneath the card");
+  assert.equal(source.includes('PrimaryButton("Zum Witz", Icons.Filled.ChatBubble'), true, "Random flow should expose a direct Zum-Witz CTA");
+  assert.equal(source.includes('PrimaryButton("Teilen", Icons.Filled.Share'), true, "Random flow should expose a direct share CTA");
+  assert.equal(source.includes("RandomInlineCommentSection("), true, "Direct random actions should sit alongside the inline comment section");
 });

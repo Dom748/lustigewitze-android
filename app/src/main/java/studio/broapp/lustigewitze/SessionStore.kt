@@ -28,9 +28,17 @@ class SessionStore(
         private set
     var feedItems by mutableStateOf<List<MobileJoke>>(emptyList())
         private set
+    var detailComments by mutableStateOf<List<MobileComment>>(emptyList())
+        private set
+    var detailCommentsError by mutableStateOf<String?>(null)
+        private set
     var feedError by mutableStateOf<String?>(null)
         private set
     var isLoadingFeed by mutableStateOf(false)
+        private set
+    var isLoadingComments by mutableStateOf(false)
+        private set
+    var isPostingComment by mutableStateOf(false)
         private set
     var hasLoadedFeed by mutableStateOf(false)
         private set
@@ -137,6 +145,48 @@ class SessionStore(
             canLoadMoreFeed = false
         } finally {
             isLoadingFeed = false
+        }
+    }
+
+    suspend fun loadComments(jokeId: String) {
+        isLoadingComments = true
+        detailCommentsError = null
+        try {
+            detailComments = apiClient.getComments(jokeId, accessToken).items
+        } catch (err: MobileApiException) {
+            detailCommentsError = err.message
+            detailComments = emptyList()
+        } catch (err: Exception) {
+            detailCommentsError = err.message ?: "Kommentare konnten nicht geladen werden."
+            detailComments = emptyList()
+        } finally {
+            isLoadingComments = false
+        }
+    }
+
+    suspend fun addComment(jokeId: String, content: String): Boolean {
+        val token = accessToken ?: run {
+            detailCommentsError = "Bitte logge dich ein, um Kommentare zu schreiben."
+            return false
+        }
+        val trimmed = content.trim()
+        if (trimmed.isEmpty() || isPostingComment) {
+            return false
+        }
+        isPostingComment = true
+        detailCommentsError = null
+        return try {
+            val created = apiClient.addComment(jokeId = jokeId, content = trimmed, accessToken = token)
+            detailComments = listOf(created) + detailComments
+            true
+        } catch (err: MobileApiException) {
+            detailCommentsError = err.fields.values.firstOrNull() ?: err.message
+            false
+        } catch (err: Exception) {
+            detailCommentsError = err.message ?: "Kommentar konnte nicht gesendet werden."
+            false
+        } finally {
+            isPostingComment = false
         }
     }
 
@@ -259,6 +309,7 @@ class SessionStore(
         authError = null
         profileError = null
         feedError = null
+        detailCommentsError = null
         blockMessage = null
         blockedUsersError = null
     }
@@ -280,6 +331,8 @@ class SessionStore(
         blockedUsers = emptyList()
         blockedUsersError = null
         blockedUsersSuccessMessage = null
+        detailComments = emptyList()
+        detailCommentsError = null
         feedItems = emptyList()
         feedError = null
         nextFeedCursor = null

@@ -1,5 +1,6 @@
 package studio.broapp.lustigewitze
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -94,8 +95,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -124,6 +125,8 @@ private data class Joke(
     val authorUsername: String,
     val score: Int,
     val favoriteCount: Int,
+    val commentCount: Int = 0,
+    val commentPreview: MobileCommentPreview? = null,
     val viewerVote: Int? = null,
     val viewerFavorite: Boolean = false
 )
@@ -253,6 +256,8 @@ private fun MobileJoke.toAppJoke(): Joke {
         authorUsername = author.username,
         score = score,
         favoriteCount = favoriteCount,
+        commentCount = commentCount,
+        commentPreview = commentPreview,
         viewerVote = viewerVote,
         viewerFavorite = viewerFavorite
     )
@@ -453,6 +458,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 )
                 Tab.Random -> RandomScreen(
                     jokes = visibleJokes,
+                    sessionStore = sessionStore,
                     blockedUserMessage = blockedUserMessage,
                     onOpenJoke = { selectedJoke = it },
                     onOpenProfile = { selectedProfileUsername = it },
@@ -486,6 +492,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         ModalBottomSheet(onDismissRequest = { selectedJoke = null }) {
             DetailScreen(
                 joke = joke,
+                sessionStore = sessionStore,
                 blockedAuthors = blockedAuthors,
                 onBack = { selectedJoke = null },
                 onOpenProfile = { selectedProfileUsername = it },
@@ -640,6 +647,7 @@ private fun FeedScreen(
 @Composable
 private fun RandomScreen(
     jokes: List<Joke>,
+    sessionStore: SessionStore,
     blockedUserMessage: String?,
     onOpenJoke: (Joke) -> Unit,
     onOpenProfile: (String) -> Unit,
@@ -672,6 +680,10 @@ private fun RandomScreen(
     }
 
     val joke = jokes[currentIndex % jokes.size]
+
+    LaunchedEffect(joke.id, sessionStore.accessToken) {
+        sessionStore.loadComments(joke.id)
+    }
 
     Box(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -711,6 +723,15 @@ private fun RandomScreen(
                 JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
             }
 
+            RandomCardActionRow(joke = joke, onOpenJoke = { onOpenJoke(joke) })
+
+            RandomInlineCommentSection(
+                joke = joke,
+                sessionStore = sessionStore,
+                onOpenProfile = onOpenProfile,
+                onAuthRequired = onAuthRequired
+            )
+
             if (undoStack.isNotEmpty()) {
                 RandomUndoButton(
                     onUndo = {
@@ -736,13 +757,16 @@ private fun RandomScreen(
 @Composable
 private fun DetailScreen(
     joke: Joke,
+    sessionStore: SessionStore,
     blockedAuthors: List<String>,
     onBack: () -> Unit,
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit,
     onBlockAuthor: (String, String) -> Unit
 ) {
-    val visibleComments = demoComments.filterNot { blockedAuthors.contains(it.author) }
+    LaunchedEffect(joke.id, sessionStore.accessToken) {
+        sessionStore.loadComments(joke.id)
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 28.dp),
@@ -784,8 +808,8 @@ private fun DetailScreen(
             onBlockAuthor = { onBlockAuthor(joke.authorId, joke.authorUsername) }
         )
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
-        CommentThreadPanel(visibleComments = visibleComments, onOpenProfile = onOpenProfile)
-        CommentComposerCard(onAuthRequired = onAuthRequired)
+        CommentThreadPanel(comments = sessionStore.detailComments.filterNot { blockedAuthors.contains(it.author.id) || blockedAuthors.contains(it.author.username) }, isLoading = sessionStore.isLoadingComments, errorMessage = sessionStore.detailCommentsError, onOpenProfile = onOpenProfile)
+        CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)
     }
 }
 
@@ -896,6 +920,7 @@ private fun ProfileScreen(
     var editEmail by rememberSaveable(currentUser?.id, currentUser?.email) { mutableStateOf(currentUser?.email.orEmpty()) }
     var editPassword by rememberSaveable(currentUser?.id) { mutableStateOf("") }
     var accountFormError by rememberSaveable(currentUser?.id) { mutableStateOf<String?>(null) }
+    var showBlockedUsers by rememberSaveable(username, isOwnProfile) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(username, sessionStore.accessToken) {
@@ -939,6 +964,30 @@ private fun ProfileScreen(
         }
 
         val resolvedProfile = profile ?: return@Column
+        if (isOwnProfile && showBlockedUsers) {
+            BlockedUsersScreen(
+                items = sessionStore.blockedUsers,
+                isLoading = sessionStore.isLoadingBlockedUsers,
+                error = sessionStore.blockedUsersError,
+                successMessage = sessionStore.blockedUsersSuccessMessage,
+                pendingUserId = sessionStore.pendingBlockedUserId,
+                onBack = { showBlockedUsers = false },
+                onReload = {
+                    scope.launch {
+                        sessionStore.loadBlockedUsers()
+                    }
+                },
+                onUnblock = { user ->
+                    scope.launch {
+                        val removed = sessionStore.unblockUser(user)
+                        if (removed) {
+                            onUnblockAuthor(user.id, user.username)
+                        }
+                    }
+                }
+            )
+            return@Column
+        }
         ScreenHeader(title = "Profil", subtitle = resolvedProfile.headline, badge = if (isOwnProfile) "Account" else "Creator")
         ProfileHeroCard(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile)
         ComicCard {
@@ -1056,25 +1105,9 @@ private fun ProfileScreen(
                     }
                 }
             }
-            BlockedUsersCard(
-                items = sessionStore.blockedUsers,
-                isLoading = sessionStore.isLoadingBlockedUsers,
-                error = sessionStore.blockedUsersError,
-                successMessage = sessionStore.blockedUsersSuccessMessage,
-                pendingUserId = sessionStore.pendingBlockedUserId,
-                onReload = {
-                    scope.launch {
-                        sessionStore.loadBlockedUsers()
-                    }
-                },
-                onUnblock = { user ->
-                    scope.launch {
-                        val removed = sessionStore.unblockUser(user)
-                        if (removed) {
-                            onUnblockAuthor(user.id, user.username)
-                        }
-                    }
-                }
+            BlockedUsersEntryCard(
+                blockedCount = sessionStore.blockedUsers.size,
+                onOpen = { showBlockedUsers = true }
             )
         } else {
             PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
@@ -1083,67 +1116,99 @@ private fun ProfileScreen(
 }
 
 @Composable
-private fun BlockedUsersCard(
+private fun BlockedUsersEntryCard(blockedCount: Int, onOpen: () -> Unit) {
+    Surface(
+        color = Comic.YellowSoft.copy(alpha = 0.72f),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Blockierte User", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text(
+                    if (blockedCount == 0) "Hier siehst du alle User, die du blockiert hast." else "$blockedCount User aktuell ausgeblendet — tippe für Details.",
+                    color = Comic.Muted
+                )
+            }
+            Pill(blockedCount.toString(), Comic.Paper)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Comic.Ink, modifier = Modifier.rotate(180f))
+        }
+    }
+}
+
+@Composable
+private fun BlockedUsersScreen(
     items: List<BlockedUserSummary>,
     isLoading: Boolean,
     error: String?,
     successMessage: String?,
     pendingUserId: String?,
+    onBack: () -> Unit,
     onReload: () -> Unit,
     onUnblock: (BlockedUserSummary) -> Unit
 ) {
-    ComicCard {
-        Text("Blockierte User", fontWeight = FontWeight.Black, fontSize = 22.sp)
-        Text(
-            "Hier kannst du gesperrte User wieder freigeben.",
-            color = Comic.Muted,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        successMessage?.let {
-            Text(it, color = Color(0xFF1B7F3B), modifier = Modifier.padding(top = 10.dp))
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ScreenHeader(title = "Blockierte User", subtitle = "Hier siehst du alle User, die du blockiert hast.", badge = "Sicherheit")
+        TextButton(onClick = onBack) {
+            Text("Zurück zum Profil")
         }
-        error?.let {
-            Text(it, color = Comic.Red, modifier = Modifier.padding(top = 10.dp))
+        successMessage?.let {
+            ComicCard {
+                Text(it, color = Color(0xFF1B7F3B), fontWeight = FontWeight.Bold)
+            }
         }
         when {
-            isLoading -> Text("Blockierte User werden geladen...", color = Comic.Muted, modifier = Modifier.padding(top = 12.dp))
-            items.isEmpty() -> Text("Du hast aktuell keine User blockiert.", color = Comic.Muted, modifier = Modifier.padding(top = 12.dp))
-            else -> Column(modifier = Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items.forEach { user ->
-                    Surface(
-                        color = Comic.Cream,
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(2.dp, Comic.Ink),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+            isLoading && items.isEmpty() -> StatusPanel("Blockierte User werden geladen...", "Wir holen gerade deine Blockliste.")
+            error != null && items.isEmpty() -> ComicCard {
+                Text("Blockliste konnte nicht geladen werden", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text(error, color = Comic.Red, modifier = Modifier.padding(top = 6.dp))
+                PrimaryButton("Erneut versuchen", Icons.Filled.Refresh, onClick = onReload)
+            }
+            items.isEmpty() -> StatusPanel("Keine blockierten User", "Sobald du jemanden blockierst, taucht die Person hier auf.")
+            else -> {
+                error?.let {
+                    Text(it, color = Comic.Red, modifier = Modifier.padding(bottom = 4.dp))
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items.forEach { user ->
+                        Surface(
+                            color = Comic.Cream,
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(2.dp, Comic.Ink),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("@${user.username}", fontWeight = FontWeight.Black)
-                                if (user.blockedAt.isNotBlank()) {
-                                    Text("Blockiert seit ${user.blockedAt}", color = Comic.Muted, fontSize = 12.sp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("@${user.username}", fontWeight = FontWeight.Black)
+                                    Text(if (user.blockedAt.isNotBlank()) "Blockiert seit ${user.blockedAt}" else "Blockiert", color = Comic.Muted, fontSize = 12.sp)
+                                    Pill("Aus Feed + Random versteckt", Comic.BlueSoft)
                                 }
-                                Pill("Aus Feed + Random versteckt", Comic.BlueSoft)
+                                Spacer(Modifier.width(10.dp))
+                                ComicAction(
+                                    title = if (pendingUserId == user.id) "Läuft..." else "Entblocken",
+                                    icon = Icons.Filled.Lock,
+                                    color = Comic.Yellow,
+                                    modifier = Modifier.width(140.dp),
+                                    enabled = pendingUserId != user.id,
+                                    onClick = { onUnblock(user) }
+                                )
                             }
-                            Spacer(Modifier.width(10.dp))
-                            ComicAction(
-                                title = if (pendingUserId == user.id) "Läuft..." else "Entblocken",
-                                icon = Icons.Filled.Lock,
-                                color = Comic.Yellow,
-                                modifier = Modifier.width(140.dp),
-                                enabled = pendingUserId != user.id,
-                                onClick = { onUnblock(user) }
-                            )
                         }
                     }
                 }
             }
-        }
-        TextButton(onClick = onReload, modifier = Modifier.padding(top = 12.dp)) {
-            Text("Neu laden")
         }
     }
 }
@@ -1422,6 +1487,9 @@ private fun JokeCard(
             onOpenProfile = onOpenProfile,
             modifier = Modifier.padding(top = 12.dp)
         )
+        if (joke.commentPreview != null && joke.commentCount > 0) {
+            JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
             ReactionTile(
                 "Top",
@@ -1575,6 +1643,25 @@ private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolea
 }
 
 @Composable
+private fun RandomCardActionRow(joke: Joke, onOpenJoke: () -> Unit) {
+    val context = LocalContext.current
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.weight(1f)) {
+            PrimaryButton("Zum Witz", Icons.Filled.ChatBubble, onClick = onOpenJoke)
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            PrimaryButton("Teilen", Icons.Filled.Share) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, joke.content)
+                }
+                context.startActivity(Intent.createChooser(intent, "Witz teilen"))
+            }
+        }
+    }
+}
+
+@Composable
 private fun RandomUndoButton(onUndo: () -> Unit) {
     Surface(
         onClick = onUndo,
@@ -1638,26 +1725,146 @@ private fun ProfileHeroCard(resolvedProfile: ProfileSummary, isOwnProfile: Boole
 }
 
 @Composable
-private fun CommentThreadPanel(visibleComments: List<Comment>, onOpenProfile: (String) -> Unit) {
+private fun JokeCommentPreviewCard(commentPreview: MobileCommentPreview?, commentCount: Int, onOpenProfile: (String) -> Unit) {
+    if (commentPreview == null || commentCount <= 0) return
+    Surface(
+        color = Comic.Cream,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.5.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            Surface(shape = CircleShape, color = Comic.BlueSoft, border = BorderStroke(1.dp, Comic.Ink)) {
+                Icon(Icons.Filled.ChatBubble, contentDescription = "Kommentar", tint = Comic.Ink, modifier = Modifier.padding(6.dp).size(14.dp))
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    TextButton(onClick = { onOpenProfile(commentPreview.author.username) }) {
+                        Text("@${commentPreview.author.username}", color = Comic.Ink, fontWeight = FontWeight.Black, maxLines = 1)
+                    }
+                    Text(
+                        text = if (commentCount == 1) "1 Kommentar" else "$commentCount Kommentare",
+                        color = Comic.Muted,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                }
+                Text(
+                    commentPreview.content,
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RandomInlineCommentSection(
+    joke: Joke,
+    sessionStore: SessionStore,
+    onOpenProfile: (String) -> Unit,
+    onAuthRequired: () -> Unit
+) {
+    var visibleComments by rememberSaveable(joke.id) { mutableStateOf(1) }
+    val comments = sessionStore.detailComments
+    val visibleItems = comments.take(visibleComments)
+    val hiddenCount = (comments.size - visibleItems.size).coerceAtLeast(0)
+
     ComicCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Pill("Kommentare", Comic.BlueSoft)
             Spacer(Modifier.weight(1f))
-            Text("${visibleComments.size} Einträge", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = if (comments.size == 1) "1 Kommentar" else "${comments.size} Kommentare",
+                color = Comic.Muted,
+                fontWeight = FontWeight.SemiBold
+            )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-            visibleComments.forEach { comment ->
-                Surface(
-                    color = Comic.Cream,
-                    shape = RoundedCornerShape(18.dp),
-                    border = BorderStroke(2.dp, Comic.Ink),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        TextButton(onClick = { onOpenProfile(comment.author) }) {
-                            Text("@${comment.author}", fontWeight = FontWeight.Black)
-                        }
-                        Text(comment.content, modifier = Modifier.padding(top = 4.dp), lineHeight = 21.sp)
+        when {
+            sessionStore.isLoadingComments -> Text("Kommentare werden geladen...", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            sessionStore.detailCommentsError != null -> Text(sessionStore.detailCommentsError ?: "", color = Comic.Red, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            visibleItems.isEmpty() -> Text("Noch keine Kommentare.", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                visibleItems.forEach { comment ->
+                    CommentCard(comment = comment, onOpenProfile = onOpenProfile)
+                }
+            }
+        }
+        if (hiddenCount > 0) {
+            Surface(
+                onClick = { visibleComments = comments.size },
+                shape = RoundedCornerShape(14.dp),
+                color = Comic.BlueSoft,
+                border = BorderStroke(1.5.dp, Comic.Ink),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+            ) {
+                Text(
+                    "Mehr Kommentare ($hiddenCount)",
+                    color = Comic.Ink,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                )
+            }
+        }
+        CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)
+    }
+}
+
+@Composable
+private fun CommentThreadPanel(
+    comments: List<MobileComment>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onOpenProfile: (String) -> Unit
+) {
+    ComicCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Pill("Kommentare", Comic.BlueSoft)
+            Spacer(Modifier.weight(1f))
+            Text("${comments.size} Einträge", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+        }
+        when {
+            isLoading -> Text("Kommentare werden geladen...", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            errorMessage != null -> Text(errorMessage, color = Comic.Red, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            comments.isEmpty() -> Text("Noch keine Kommentare.", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                comments.forEach { comment ->
+                    CommentCard(comment = comment, onOpenProfile = onOpenProfile)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentCard(comment: MobileComment, onOpenProfile: (String) -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        color = Comic.Cream,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { onOpenProfile(comment.author.username) }) {
+                    Text("@${comment.author.username}", fontWeight = FontWeight.Black)
+                }
+                if (comment.isOwner) {
+                    Pill("Du", Comic.YellowSoft)
+                }
+            }
+            Text(comment.content, lineHeight = 21.sp)
+            if (comment.replies.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 12.dp)) {
+                    comment.replies.forEach { reply ->
+                        CommentCard(comment = reply, onOpenProfile = onOpenProfile)
                     }
                 }
             }
@@ -1666,24 +1873,45 @@ private fun CommentThreadPanel(visibleComments: List<Comment>, onOpenProfile: (S
 }
 
 @Composable
-private fun CommentComposerCard(onAuthRequired: () -> Unit) {
+private fun CommentComposerCard(sessionStore: SessionStore, jokeId: String, onAuthRequired: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var draft by rememberSaveable(jokeId) { mutableStateOf("") }
     ComicCard {
         Pill("Kommentar", Comic.YellowSoft)
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
+            value = draft,
+            onValueChange = { draft = it },
             placeholder = { Text("Kommentar schreiben...") },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            readOnly = true
+            enabled = !sessionStore.isPostingComment,
+            minLines = 2
         )
         Text(
-            "Zum Schreiben bitte kurz einloggen — die Detailansicht bleibt sonst bewusst sauber und lesbar.",
+            if (sessionStore.accessToken == null) {
+                "Zum Schreiben brauchst du einen Account — lesen bleibt ohne Login offen."
+            } else {
+                "Wie auf iOS: Kommentar direkt hier schreiben und live in den Thread posten."
+            },
             color = Comic.Muted,
             fontWeight = FontWeight.SemiBold,
             lineHeight = 20.sp,
             modifier = Modifier.padding(top = 10.dp)
         )
-        PrimaryButton("Einloggen zum Kommentieren", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
+        sessionStore.detailCommentsError?.let { error ->
+            Text(error, color = Comic.Red, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+        }
+        PrimaryButton("Senden", Icons.Filled.Share, enabled = draft.trim().isNotEmpty() && !sessionStore.isPostingComment) {
+            if (sessionStore.accessToken == null) {
+                onAuthRequired()
+            } else {
+                scope.launch {
+                    val sent = sessionStore.addComment(jokeId = jokeId, content = draft)
+                    if (sent) {
+                        draft = ""
+                    }
+                }
+            }
+        }
     }
 }
 

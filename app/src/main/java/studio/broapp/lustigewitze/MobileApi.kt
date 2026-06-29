@@ -48,6 +48,32 @@ data class MobileJokeAuthor(
     val username: String
 )
 
+data class MobileCommentAuthor(
+    val id: String,
+    val username: String
+)
+
+data class MobileCommentPreview(
+    val id: String,
+    val content: String,
+    val author: MobileCommentAuthor
+)
+
+data class MobileComment(
+    val id: String,
+    val content: String,
+    val createdAt: String,
+    val deletedAt: String?,
+    val parentId: String?,
+    val isOwner: Boolean,
+    val author: MobileCommentAuthor,
+    val replies: List<MobileComment>
+)
+
+data class MobileCommentResponse(
+    val items: List<MobileComment>
+)
+
 data class MobileJoke(
     val id: String,
     val content: String,
@@ -56,6 +82,8 @@ data class MobileJoke(
     val score: Int,
     val favoriteCount: Int,
     val legendCount: Int,
+    val commentCount: Int,
+    val commentPreview: MobileCommentPreview?,
     val viewerVote: Int?,
     val viewerFavorite: Boolean,
     val createdAt: String
@@ -155,6 +183,19 @@ class MobileApiClient {
             jokes = parseJokes(json.optJSONArray("jokes")),
             favorites = parseJokes(json.optJSONArray("favorites"))
         )
+    }
+
+    suspend fun getComments(jokeId: String, accessToken: String? = null): MobileCommentResponse {
+        val json = request("GET", "/api/mobile/jokes/$jokeId/comments", accessToken = accessToken)
+        return MobileCommentResponse(items = parseComments(json.optJSONArray("items")))
+    }
+
+    suspend fun addComment(jokeId: String, content: String, accessToken: String): MobileComment {
+        val payload = JSONObject()
+            .put("content", content)
+            .put("parentId", JSONObject.NULL)
+        val json = request("POST", "/api/mobile/jokes/$jokeId/comments", payload = payload, accessToken = accessToken)
+        return parseComment(json)
     }
 
     suspend fun blockUser(authorId: String, jokeId: String, accessToken: String): BlockUserResult {
@@ -298,6 +339,18 @@ class MobileApiClient {
                         score = item.optInt("score", 0),
                         favoriteCount = item.optInt("favoriteCount", 0),
                         legendCount = item.optInt("legendCount", 0),
+                        commentCount = item.optInt("commentCount", 0),
+                        commentPreview = item.optJSONObject("commentPreview")?.let { preview ->
+                            val previewAuthor = preview.getJSONObject("author")
+                            MobileCommentPreview(
+                                id = preview.getString("id"),
+                                content = preview.getString("content"),
+                                author = MobileCommentAuthor(
+                                    id = previewAuthor.getString("id"),
+                                    username = previewAuthor.getString("username")
+                                )
+                            )
+                        },
                         viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") },
                         viewerFavorite = item.optBoolean("viewerFavorite", false),
                         createdAt = item.optString("createdAt")
@@ -305,5 +358,31 @@ class MobileApiClient {
                 )
             }
         }
+    }
+
+    private fun parseComments(array: JSONArray?): List<MobileComment> {
+        if (array == null) return emptyList()
+        return buildList {
+            for (index in 0 until array.length()) {
+                add(parseComment(array.getJSONObject(index)))
+            }
+        }
+    }
+
+    private fun parseComment(json: JSONObject): MobileComment {
+        val author = json.getJSONObject("author")
+        return MobileComment(
+            id = json.getString("id"),
+            content = json.getString("content"),
+            createdAt = json.optString("createdAt"),
+            deletedAt = json.optString("deletedAt").takeIf { it.isNotBlank() && it != "null" },
+            parentId = json.optString("parentId").takeIf { it.isNotBlank() && it != "null" },
+            isOwner = json.optBoolean("isOwner", false),
+            author = MobileCommentAuthor(
+                id = author.getString("id"),
+                username = author.getString("username")
+            ),
+            replies = parseComments(json.optJSONArray("replies"))
+        )
     }
 }
