@@ -70,6 +70,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -1345,6 +1346,22 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
     var acceptedTerms by rememberSaveable { mutableStateOf(false) }
     var confirmedAdult by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val authFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = Comic.Paper,
+        unfocusedContainerColor = Comic.Paper,
+        disabledContainerColor = Comic.Panel,
+        focusedBorderColor = Comic.Ink,
+        unfocusedBorderColor = Comic.Ink,
+        focusedLabelColor = Comic.Ink,
+        unfocusedLabelColor = Comic.Muted,
+        cursorColor = Comic.Ink
+    )
+    val headerSubtitle = when {
+        mode == "Login" -> "Einloggen und direkt mitvoten."
+        sessionStore.currentUser?.isGuest == true -> "Wandle dein Gastkonto in einen normalen Account um, damit deine Witze und Favoriten bleiben."
+        else -> "Account erstellen und Lieblingswitze sichern."
+    }
+    val primaryButtonTitle = if (sessionStore.currentUser?.isGuest == true && mode == "Registrieren") "Gastkonto sichern" else mode
 
     LaunchedEffect(sessionStore.currentUser?.id) {
         if (sessionStore.currentUser != null) {
@@ -1353,36 +1370,105 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(18.dp).windowInsetsPadding(WindowInsets.navigationBars),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        ScreenHeader(title = mode, subtitle = "Native Mobile Auth mit Access- und Refresh-Token.", badge = "Auth")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Segment("Login", selected = mode == "Login") { mode = "Login" }
-            Segment("Register", selected = mode == "Register") { mode = "Register" }
-        }
-        OutlinedTextField(value = identifier, onValueChange = { identifier = it }, label = { Text("Username oder E-Mail") }, modifier = Modifier.fillMaxWidth())
-        if (mode == "Register") {
-            OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("E-Mail") }, modifier = Modifier.fillMaxWidth())
-        }
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Passwort") }, modifier = Modifier.fillMaxWidth())
+        ScreenHeader(title = "LustigeWitze", subtitle = headerSubtitle, badge = mode.uppercase())
         ComicCard {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Nutzungsbedingungen / EULA", fontWeight = FontWeight.Black)
-                Text("Vor Login oder Registrierung akzeptierst du die Regeln für UGC, Moderation und Account-Nutzung. Für den Gastzugang gilt zusätzlich: nur volljährig.", color = Comic.Muted)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
-                    Text("Ich akzeptiere die Nutzungsbedingungen und Moderationsregeln.", color = Comic.Muted)
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    AuthModeSegment(title = "Login", selected = mode == "Login", modifier = Modifier.weight(1f)) { mode = "Login" }
+                    AuthModeSegment(title = "Registrieren", selected = mode == "Registrieren", modifier = Modifier.weight(1f)) { mode = "Registrieren" }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = confirmedAdult, onCheckedChange = { confirmedAdult = it })
-                    Text("Ich bestätige, dass ich volljährig bin.", color = Comic.Muted)
+                Surface(
+                    color = Comic.Cream,
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.88f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text("Nutzungsbedingungen / EULA", fontWeight = FontWeight.Black)
+                        Text(
+                            "Vor Login, Registrierung oder Gastzugang akzeptierst du die Regeln für Inhalte und Moderation und bestätigst, dass du volljährig bist.",
+                            color = Comic.Muted,
+                            lineHeight = 20.sp
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = acceptedTerms, onCheckedChange = { acceptedTerms = it })
+                            Text("Ich akzeptiere die Nutzungsbedingungen und Melde-/Moderationsregeln.", color = Comic.Ink, fontWeight = FontWeight.Bold)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = confirmedAdult, onCheckedChange = { confirmedAdult = it })
+                            Text("Ich bestätige, dass ich volljährig bin.", color = Comic.Ink, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                if (mode == "Login") {
+                    OutlinedTextField(
+                        value = identifier,
+                        onValueChange = { identifier = it },
+                        label = { Text("Benutzername oder E-Mail") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = authFieldColors
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Username") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = authFieldColors
+                    )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("E-Mail") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = authFieldColors
+                    )
+                }
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Passwort") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp),
+                    colors = authFieldColors
+                )
+                sessionStore.authError?.let {
+                    Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            if (mode == "Login") {
+                                sessionStore.login(identifier = identifier, password = password)
+                            } else {
+                                sessionStore.register(username = username, email = email, password = password)
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth,
+                    colors = ButtonDefaults.buttonColors(containerColor = Comic.Yellow, contentColor = Comic.Ink),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text(primaryButtonTitle, fontWeight = FontWeight.Black)
                 }
             }
-        }
-        sessionStore.authError?.let {
-            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
         ComicCard {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1399,26 +1485,14 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth
+                    enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth,
+                    colors = ButtonDefaults.buttonColors(containerColor = Comic.Paper, contentColor = Comic.Ink),
+                    border = BorderStroke(2.dp, Comic.Ink),
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Text("Als Gast fortfahren", fontWeight = FontWeight.Black)
                 }
             }
-        }
-        Button(
-            onClick = {
-                scope.launch {
-                    if (mode == "Login") {
-                        sessionStore.login(identifier = identifier, password = password)
-                    } else {
-                        sessionStore.register(username = username, email = email, password = password)
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth
-        ) {
-            Text(mode, fontWeight = FontWeight.Black)
         }
     }
 }
@@ -1759,6 +1833,24 @@ private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
             labelColor = Comic.Ink
         )
     )
+}
+
+@Composable
+private fun AuthModeSegment(title: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) Color.White else Comic.Panel,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(title, fontWeight = FontWeight.Black, color = Comic.Ink)
+        }
+    }
 }
 
 @Composable

@@ -19,12 +19,19 @@ const mobileApi = readFileSync(
 test("android auth sheet gates login registration and guest access behind terms acceptance", () => {
   assert.equal(source.includes("var acceptedTerms by rememberSaveable"), true, "AuthSheet should track accepted terms state");
   assert.equal(source.includes("var confirmedAdult by rememberSaveable"), true, "AuthSheet should track a separate adulthood confirmation state");
+  assert.equal(source.includes("ScreenHeader(title = \"LustigeWitze\""), true, "AuthSheet should use the same LustigeWitze hero title as iOS");
+  assert.equal(source.includes("Einloggen und direkt mitvoten."), true, "AuthSheet should mirror the iOS login subtitle");
+  assert.equal(source.includes("AuthModeSegment(title = \"Login\""), true, "AuthSheet should use a dedicated iOS-like segmented control");
+  assert.equal(source.includes("AuthModeSegment(title = \"Registrieren\""), true, "AuthSheet should use the German register tab label like iOS");
   assert.equal(source.includes("Nutzungsbedingungen / EULA"), true, "AuthSheet should show a visible terms / EULA block");
+  assert.equal(source.includes("Ich akzeptiere die Nutzungsbedingungen und Melde-/Moderationsregeln."), true, "AuthSheet should match the iOS moderation wording");
   assert.equal(source.includes("Checkbox(checked = acceptedTerms"), true, "AuthSheet should require an explicit checkbox");
   assert.equal(source.includes("Checkbox(checked = confirmedAdult"), true, "AuthSheet should require an explicit legal-age checkbox");
   assert.equal(source.includes("Ich bestätige, dass ich volljährig bin."), true, "AuthSheet should visibly mention the legal-age confirmation");
+  assert.equal(source.includes("OutlinedTextFieldDefaults.colors("), true, "AuthSheet inputs should use dedicated comic field colors instead of plain defaults");
   assert.equal(source.includes("Ohne Login testen"), true, "AuthSheet should expose a visible guest CTA header");
   assert.equal(source.includes("Als Gast fortfahren"), true, "AuthSheet should expose a direct guest CTA");
+  assert.equal(source.indexOf("Text(primaryButtonTitle") < source.indexOf("Text(\"Als Gast fortfahren\""), true, "Primary auth CTA should appear before the guest card like on iOS");
   assert.equal(source.includes("sessionStore.ensureGuestSession()"), true, "Guest CTA should trigger the shared Android guest session bootstrap");
   assert.equal(source.includes("enabled = acceptedTerms && confirmedAdult"), true, "Auth submit should stay disabled until terms and legal-age confirmation are accepted");
   assert.equal(sessionStore.includes("suspend fun ensureGuestSession()"), true, "SessionStore should expose a guest-session helper");
