@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shuffle
@@ -802,70 +803,204 @@ private fun DetailScreen(
 
 @Composable
 private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (String) -> Unit) {
-    val rows = listOf("pointenpaule" to 421, "deadline_dieter" to 317, "sofaprofi" to 284)
-        .filterNot { blockedAuthors.contains(it.first) }
+    data class LeaderboardEntry(val username: String, val jokeCount: Int, val score: Int)
+
+    var selectedMode by rememberSaveable { mutableStateOf("User") }
+    var selectedPeriod by rememberSaveable { mutableStateOf("Alle") }
+    val rows = listOf(
+        LeaderboardEntry("WitzKiosk", 103, 462),
+        LeaderboardEntry("FlachwitzFritz", 10, 72),
+        LeaderboardEntry("bro_spicy_310794", 12, 71),
+        LeaderboardEntry("PiratPiet", 11, 61),
+        LeaderboardEntry("WortspielWilli", 10, 56)
+    ).filterNot { blockedAuthors.contains(it.username) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            ScreenHeader(title = "Rangliste", subtitle = "Top Witze und Top User direkt im stitched Feed-Look.", badge = "Top")
-            ComicCard(modifier = Modifier.padding(top = 14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Pill("User", Comic.YellowSoft)
-                    Pill("Witze", Comic.BlueSoft)
-                    Pill("Woche", Comic.Pink)
-                }
-                Text(
-                    "Wie auf iOS: oben nur die wichtigsten Modi, darunter direkt die stärksten Creator ohne Tabellen-Look.",
-                    color = Comic.Muted,
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 20.sp,
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    Segment("User", selected = true) {}
-                    Segment("Witze", selected = false) {}
-                    Segment("Woche", selected = false) {}
-                }
-            }
+            LeaderboardHeaderCard(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET))
+            LeaderboardFilterCard(
+                selectedMode = selectedMode,
+                selectedPeriod = selectedPeriod,
+                onSelectMode = { selectedMode = it },
+                onSelectPeriod = { selectedPeriod = it },
+                modifier = Modifier.padding(top = 10.dp)
+            )
         }
         items(rows.withIndex().toList()) { indexed ->
             val rank = indexed.index + 1
-            val name = indexed.value.first
-            val score = indexed.value.second
-            ComicCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (rank == 1) Comic.Yellow else Comic.BlueSoft,
-                        border = BorderStroke(2.dp, Comic.Ink)
-                    ) {
-                        Text(
-                            "#$rank",
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        TextButton(onClick = { onOpenProfile(name) }) {
-                            Text("@$name", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        }
-                        Text("$score Punkte", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                            Pill("Zum Profil", Comic.Paper)
-                            Pill("Live Ranking", Comic.Pink)
-                        }
-                    }
-                    ScoreBadge(score)
-                }
+            LeaderboardUserRowCard(
+                rank = rank,
+                username = indexed.value.username,
+                jokeCount = indexed.value.jokeCount,
+                score = indexed.value.score,
+                highlighted = rank == 1,
+                onOpenProfile = { onOpenProfile(indexed.value.username) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardHeaderCard(modifier: Modifier = Modifier) {
+    Surface(
+        color = Comic.Paper,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .border(BorderStroke(1.5.dp, Comic.Ink.copy(alpha = 0.35f)), RoundedCornerShape(20.dp))
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Text("Rangliste", fontSize = 28.sp, fontWeight = FontWeight.Black, lineHeight = 31.sp)
+            Text("Top Witze und Top User", color = Comic.Muted, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp)
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardFilterCard(
+    selectedMode: String,
+    selectedPeriod: String,
+    onSelectMode: (String) -> Unit,
+    onSelectPeriod: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Comic.Paper,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                LeaderboardSegment("User", selected = selectedMode == "User", icon = Icons.Filled.People, modifier = Modifier.weight(1f)) { onSelectMode("User") }
+                LeaderboardSegment("Witze", selected = selectedMode == "Witze", icon = Icons.Filled.ChatBubble, modifier = Modifier.weight(1f)) { onSelectMode("Witze") }
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                LeaderboardSegment("Alle", selected = selectedPeriod == "Alle", modifier = Modifier.weight(1f)) { onSelectPeriod("Alle") }
+                LeaderboardSegment("Heute", selected = selectedPeriod == "Heute", modifier = Modifier.weight(1f)) { onSelectPeriod("Heute") }
+                LeaderboardSegment("Woche", selected = selectedPeriod == "Woche", modifier = Modifier.weight(1f)) { onSelectPeriod("Woche") }
+                LeaderboardSegment("Monat", selected = selectedPeriod == "Monat", modifier = Modifier.weight(1f)) { onSelectPeriod("Monat") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardSegment(
+    title: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) Comic.Yellow else Comic.Paper,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            icon?.let {
+                Icon(it, contentDescription = null, tint = Comic.Ink, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(title, color = Comic.Ink, fontWeight = FontWeight.Black, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardUserRowCard(
+    rank: Int,
+    username: String,
+    jokeCount: Int,
+    score: Int,
+    highlighted: Boolean,
+    onOpenProfile: () -> Unit
+) {
+    Surface(
+        color = if (highlighted) Comic.YellowSoft else Comic.Paper,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 14.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (highlighted) Comic.Yellow else Color.White,
+                    border = BorderStroke(2.dp, Comic.Ink)
+                ) {
+                    Text("#$rank", fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        "@$username",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        modifier = Modifier.clickable(onClick = onOpenProfile)
+                    )
+                    Text("$jokeCount Witze", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+                    Surface(
+                        onClick = onOpenProfile,
+                        color = Color.White,
+                        shape = RoundedCornerShape(999.dp),
+                        border = BorderStroke(1.5.dp, Comic.Ink)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Filled.AccountCircle, contentDescription = null, tint = Comic.Ink, modifier = Modifier.size(14.dp))
+                            Text("Zum Profil", color = Comic.Ink, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                LeaderboardScoreBadge(score)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardScoreBadge(score: Int) {
+    Surface(
+        color = Color(0xFFFF8F57),
+        shape = RoundedCornerShape(999.dp),
+        border = BorderStroke(2.dp, Comic.Ink)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+            Text("🔥", fontSize = 12.sp)
+            Text(score.toString(), color = Comic.Ink, fontWeight = FontWeight.Black)
         }
     }
 }

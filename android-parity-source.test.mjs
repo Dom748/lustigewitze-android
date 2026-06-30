@@ -78,7 +78,7 @@ test("android routes usernames into profile navigation from cards comments and l
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
   assert.equal(source.includes("modifier = Modifier.clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author chip is tapped");
   assert.equal(source.includes('TextButton(onClick = { onOpenProfile(comment.author.username) })'), true, "Detail comments should open a profile when the author name is tapped");
-  assert.equal(source.includes('TextButton(onClick = { onOpenProfile(name) })'), true, "Leaderboard rows should open a profile when the username is tapped");
+  assert.equal(source.includes('modifier = Modifier.clickable(onClick = onOpenProfile)'), true, "Leaderboard rows should open a profile when the username is tapped");
 });
 
 test("android detail flow can block a user and surface blocked-user handling", () => {
