@@ -113,7 +113,7 @@ test("android overview cards collapse long jokes while detail keeps full text", 
   assert.equal(source.includes("truncatesLongContent = false"), true, "DetailScreen should keep full joke text visible");
 });
 
-test("android random and feed cards expose ios-style comment preview metadata and inline random commenting", () => {
+test("android random and feed cards expose ios-style comment preview metadata and compact random commenting", () => {
   assert.equal(mobileApi.includes("data class MobileCommentPreview("), true, "Mobile API client should parse the comment preview payload from the mobile feed");
   assert.equal(mobileApi.includes("val commentCount: Int"), true, "Mobile jokes should keep the live comment count");
   assert.equal(mobileApi.includes("val commentPreview: MobileCommentPreview?"), true, "Mobile jokes should keep the preview comment payload");
@@ -123,14 +123,15 @@ test("android random and feed cards expose ios-style comment preview metadata an
   assert.equal(source.includes("commentPreview = commentPreview"), true, "Feed mapping should preserve the preview comment from the mobile API");
   assert.equal(source.includes("RandomInlineCommentSection("), true, "Random screen should expose an inline comment section like iOS");
   assert.equal(source.includes("sessionStore.loadComments(joke.id)"), true, "Random inline comment section should load the current joke comments");
-  assert.equal(source.includes("CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)"), true, "Random inline comment section should reuse the real mobile comment composer");
+  assert.equal(source.includes("CompactRandomCommentComposer(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)"), true, "Random inline comment section should use a compact composer instead of a huge expanded card");
+  assert.equal(source.includes("showComposer = !showComposer"), true, "Random comments should toggle the compact composer from a small button like iOS");
   assert.equal(source.includes("JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)"), true, "Cards should render a compact preview row when a mobile comment preview exists");
   assert.equal(source.includes("Mehr Kommentare"), true, "Android should expose a visible more-comments affordance like iOS");
 });
 
-test("android random cards expose direct zum-witz and teilen actions instead of only implicit card taps", () => {
-  assert.equal(source.includes("RandomCardActionRow("), true, "Random flow should render a dedicated action row beneath the card");
-  assert.equal(source.includes('PrimaryButton("Zum Witz", Icons.Filled.ChatBubble'), true, "Random flow should expose a direct Zum-Witz CTA");
-  assert.equal(source.includes('PrimaryButton("Teilen", Icons.Filled.Share'), true, "Random flow should expose a direct share CTA");
-  assert.equal(source.includes("RandomInlineCommentSection("), true, "Direct random actions should sit alongside the inline comment section");
+test("android random screen drops oversized action panels and keeps the viewport scrollable", () => {
+  assert.equal(source.includes("verticalScroll(rememberScrollState())"), true, "Random screen should allow scrolling when the joke and comments exceed the viewport");
+  assert.equal(source.includes("RandomCardActionRow("), false, "Random flow should drop the oversized dedicated action row beneath the card");
+  assert.equal(source.includes("StatusPanel(\n                title = \"Random Flow\""), false, "Random flow should drop the extra explanatory status panel");
+  assert.equal(source.includes("CompactRandomCommentComposer("), true, "Random flow should keep comments but use a smaller inline composer");
 });

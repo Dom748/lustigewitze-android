@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -679,8 +680,11 @@ private fun RandomScreen(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
                 ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
@@ -713,15 +717,6 @@ private fun RandomScreen(
                 JokeCard(joke = joke, onOpen = { onOpenJoke(joke) }, onOpenProfile = onOpenProfile, onAuthRequired = onAuthRequired)
             }
 
-            RandomCardActionRow(joke = joke, onOpenJoke = { onOpenJoke(joke) })
-
-            RandomInlineCommentSection(
-                joke = joke,
-                sessionStore = sessionStore,
-                onOpenProfile = onOpenProfile,
-                onAuthRequired = onAuthRequired
-            )
-
             if (undoStack.isNotEmpty()) {
                 RandomUndoButton(
                     onUndo = {
@@ -732,14 +727,16 @@ private fun RandomScreen(
                 )
             }
 
+            RandomInlineCommentSection(
+                joke = joke,
+                sessionStore = sessionStore,
+                onOpenProfile = onOpenProfile,
+                onAuthRequired = onAuthRequired
+            )
+
             PrimaryButton("Neuen Random-Witz laden", Icons.Filled.Refresh) {
                 advanceRandomStack()
             }
-
-            StatusPanel(
-                title = "Random Flow",
-                message = "Ein klarer CTA unten, Swipe direkt auf der Karte und Undo als leise Rückhol-Option."
-            )
         }
     }
 }
@@ -1621,39 +1618,21 @@ private fun ProfileStatCard(title: String, value: String, accent: Color, modifie
 
 @Composable
 private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolean) {
-    ComicCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Surface(
+        color = Comic.Cream,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
             Pill("Deck", Comic.YellowSoft)
-            Spacer(Modifier.width(8.dp))
-            Text("${(currentIndex % total) + 1} / $total", fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Pill("${(currentIndex % total) + 1} / $total", Comic.BlueSoft)
             Spacer(Modifier.weight(1f))
-            Pill(if (undoAvailable) "Undo bereit" else "Swipe aktiv", if (undoAvailable) Comic.Pink else Comic.BlueSoft)
-        }
-        Text(
-            "Eine Karte im Fokus, ein ruhiger Undo-Chip darunter und dann direkt der nächste Treffer.",
-            color = Comic.Muted,
-            fontWeight = FontWeight.SemiBold,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-    }
-}
-
-@Composable
-private fun RandomCardActionRow(joke: Joke, onOpenJoke: () -> Unit) {
-    val context = LocalContext.current
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.weight(1f)) {
-            PrimaryButton("Zum Witz", Icons.Filled.ChatBubble, onClick = onOpenJoke)
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            PrimaryButton("Teilen", Icons.Filled.Share) {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, joke.content)
-                }
-                context.startActivity(Intent.createChooser(intent, "Witz teilen"))
-            }
+            Pill(if (undoAvailable) "Undo" else "Swipe", if (undoAvailable) Comic.Pink else Comic.Yellow)
         }
     }
 }
@@ -1770,47 +1749,69 @@ private fun RandomInlineCommentSection(
     onAuthRequired: () -> Unit
 ) {
     var visibleComments by rememberSaveable(joke.id) { mutableStateOf(1) }
+    var showComposer by rememberSaveable(joke.id) { mutableStateOf(false) }
     val comments = sessionStore.detailComments
     val visibleItems = comments.take(visibleComments)
     val hiddenCount = (comments.size - visibleItems.size).coerceAtLeast(0)
 
-    ComicCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill("Kommentare", Comic.BlueSoft)
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = if (comments.size == 1) "1 Kommentar" else "${comments.size} Kommentare",
-                color = Comic.Muted,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        when {
-            sessionStore.isLoadingComments -> Text("Kommentare werden geladen...", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
-            sessionStore.detailCommentsError != null -> Text(sessionStore.detailCommentsError ?: "", color = Comic.Red, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
-            visibleItems.isEmpty() -> Text("Noch keine Kommentare.", color = Comic.Muted, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
-            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-                visibleItems.forEach { comment ->
-                    CommentCard(comment = comment, onOpenProfile = onOpenProfile)
+    Surface(
+        color = Comic.Cream,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Pill("Kommentare", Comic.BlueSoft)
+                Spacer(Modifier.width(8.dp))
+                Pill(if (comments.size == 1) "1" else comments.size.toString(), Comic.YellowSoft)
+                Spacer(Modifier.weight(1f))
+                Surface(
+                    onClick = { showComposer = !showComposer },
+                    shape = RoundedCornerShape(999.dp),
+                    color = if (showComposer) Comic.Pink else Comic.Yellow,
+                    border = BorderStroke(1.5.dp, Comic.Ink)
+                ) {
+                    Text(
+                        if (showComposer) "Schließen" else "Kommentieren",
+                        color = Comic.Ink,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                    )
                 }
             }
-        }
-        if (hiddenCount > 0) {
-            Surface(
-                onClick = { visibleComments = comments.size },
-                shape = RoundedCornerShape(14.dp),
-                color = Comic.BlueSoft,
-                border = BorderStroke(1.5.dp, Comic.Ink),
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
-            ) {
-                Text(
-                    "Mehr Kommentare ($hiddenCount)",
-                    color = Comic.Ink,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-                )
+            when {
+                sessionStore.isLoadingComments -> Text("Kommentare werden geladen...", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+                sessionStore.detailCommentsError != null -> Text(sessionStore.detailCommentsError ?: "", color = Comic.Red, fontWeight = FontWeight.SemiBold)
+                visibleItems.isEmpty() -> Text("Noch keine Kommentare.", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
+                else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    visibleItems.forEach { comment ->
+                        CommentCard(comment = comment, onOpenProfile = onOpenProfile)
+                    }
+                }
+            }
+            if (hiddenCount > 0) {
+                Surface(
+                    onClick = { visibleComments = comments.size },
+                    shape = RoundedCornerShape(999.dp),
+                    color = Comic.BlueSoft,
+                    border = BorderStroke(1.5.dp, Comic.Ink)
+                ) {
+                    Text(
+                        "Mehr Kommentare ($hiddenCount)",
+                        color = Comic.Ink,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+            }
+            if (showComposer) {
+                CompactRandomCommentComposer(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)
             }
         }
-        CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)
     }
 }
 
@@ -1906,6 +1907,72 @@ private fun CommentComposerCard(sessionStore: SessionStore, jokeId: String, onAu
                     if (sent) {
                         draft = ""
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactRandomCommentComposer(sessionStore: SessionStore, jokeId: String, onAuthRequired: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var draft by rememberSaveable("random-$jokeId") { mutableStateOf("") }
+    Surface(
+        color = Comic.Yellow.copy(alpha = 0.18f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.5.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(10.dp)
+        ) {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                placeholder = { Text("Kommentar schreiben...") },
+                enabled = !sessionStore.isPostingComment,
+                minLines = 1,
+                maxLines = 3,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                if (sessionStore.accessToken == null) {
+                    "Zum Schreiben brauchst du einen Account — lesen bleibt ohne Login offen."
+                } else {
+                    "Direkt hier kurz antworten wie auf iOS."
+                },
+                color = Comic.Muted,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 18.sp
+            )
+            sessionStore.detailCommentsError?.let { error ->
+                Text(error, color = Comic.Red, fontWeight = FontWeight.SemiBold)
+            }
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                Surface(
+                    onClick = {
+                        if (sessionStore.accessToken == null) {
+                            onAuthRequired()
+                        } else {
+                            scope.launch {
+                                val sent = sessionStore.addComment(jokeId = jokeId, content = draft)
+                                if (sent) {
+                                    draft = ""
+                                }
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(999.dp),
+                    color = Comic.Pink,
+                    border = BorderStroke(1.5.dp, Comic.Ink)
+                ) {
+                    Text(
+                        "Senden",
+                        color = Comic.Ink,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
                 }
             }
         }
