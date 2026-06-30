@@ -383,34 +383,24 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                    Text(
-                        "Navigation",
-                        color = Comic.Muted,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.6.sp,
-                        modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 2.dp)
-                    )
-                    NavigationBar(
-                        containerColor = Color.Transparent,
-                        tonalElevation = 0.dp
-                    ) {
-                        Tab.entries.forEach { tab ->
-                            NavigationBarItem(
-                                selected = selectedTab == tab,
-                                onClick = { selectedTab = tab },
-                                icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                label = { Text(tab.label, fontWeight = FontWeight.Black) },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Comic.Ink,
-                                    selectedTextColor = Comic.Ink,
-                                    indicatorColor = Comic.Yellow,
-                                    unselectedIconColor = Comic.Muted,
-                                    unselectedTextColor = Comic.Muted
-                                )
+                NavigationBar(
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp
+                ) {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = { selectedTab = tab },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label, fontWeight = FontWeight.Black) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Comic.Ink,
+                                selectedTextColor = Comic.Ink,
+                                indicatorColor = Comic.Yellow,
+                                unselectedIconColor = Comic.Muted,
+                                unselectedTextColor = Comic.Muted
                             )
-                        }
+                        )
                     }
                 }
             }
@@ -1462,75 +1452,82 @@ private fun JokeCard(
         joke.content
     }
 
-    ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill(joke.category, Comic.Yellow)
-            Spacer(Modifier.weight(1f))
-            ScoreBadge(joke.score)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Pill(joke.category, Comic.Yellow)
+                Spacer(Modifier.weight(1f))
+            }
+            Text(
+                visibleContent,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                lineHeight = 32.sp,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+            if (shouldShowContentDisclosure) {
+                JokeDisclosureButton(
+                    expanded = isContentExpanded,
+                    onClick = { isContentExpanded = !isContentExpanded }
+                )
+            }
+            JokeMetaStrip(
+                authorUsername = joke.authorUsername,
+                favoriteCount = joke.favoriteCount,
+                onOpenProfile = onOpenProfile,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+            if (joke.commentPreview != null && joke.commentCount > 0) {
+                JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
+                ReactionTile(
+                    "Top",
+                    Icons.Filled.ThumbUp,
+                    joke.viewerVote == 1,
+                    Modifier.width(72.dp),
+                    onAuthRequired,
+                    showTitle = false,
+                    compactHorizontalPadding = 3.dp,
+                    compactVerticalPadding = 2.dp
+                )
+                ReactionTile(
+                    "Runter",
+                    Icons.Filled.ThumbDown,
+                    joke.viewerVote == -1,
+                    Modifier.width(72.dp),
+                    onAuthRequired,
+                    showTitle = false,
+                    compactHorizontalPadding = 3.dp,
+                    compactVerticalPadding = 2.dp
+                )
+                ReactionTile(
+                    "Superlike",
+                    Icons.Filled.Star,
+                    joke.viewerVote == 5,
+                    Modifier.width(72.dp),
+                    onAuthRequired,
+                    showTitle = false,
+                    compactHorizontalPadding = 3.dp,
+                    compactVerticalPadding = 2.dp
+                )
+                ReactionTile(
+                    if (joke.viewerFavorite) "Gemerkt" else "Merken",
+                    Icons.Filled.Bookmark,
+                    joke.viewerFavorite,
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp),
+                    onAuthRequired
+                )
+            }
         }
-        Text(
-            visibleContent,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Black,
-            lineHeight = 32.sp,
-            modifier = Modifier.padding(top = 14.dp)
+        ScoreBadge(
+            score = joke.score,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = (-6).dp, end = (-8).dp)
         )
-        if (shouldShowContentDisclosure) {
-            JokeDisclosureButton(
-                expanded = isContentExpanded,
-                onClick = { isContentExpanded = !isContentExpanded }
-            )
-        }
-        JokeMetaStrip(
-            authorUsername = joke.authorUsername,
-            favoriteCount = joke.favoriteCount,
-            onOpenProfile = onOpenProfile,
-            modifier = Modifier.padding(top = 12.dp)
-        )
-        if (joke.commentPreview != null && joke.commentCount > 0) {
-            JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 14.dp)) {
-            ReactionTile(
-                "Top",
-                Icons.Filled.ThumbUp,
-                joke.viewerVote == 1,
-                Modifier.width(72.dp),
-                onAuthRequired,
-                showTitle = false,
-                compactHorizontalPadding = 3.dp,
-                compactVerticalPadding = 2.dp
-            )
-            ReactionTile(
-                "Runter",
-                Icons.Filled.ThumbDown,
-                joke.viewerVote == -1,
-                Modifier.width(72.dp),
-                onAuthRequired,
-                showTitle = false,
-                compactHorizontalPadding = 3.dp,
-                compactVerticalPadding = 2.dp
-            )
-            ReactionTile(
-                "Superlike",
-                Icons.Filled.Star,
-                joke.viewerVote == 5,
-                Modifier.width(72.dp),
-                onAuthRequired,
-                showTitle = false,
-                compactHorizontalPadding = 3.dp,
-                compactVerticalPadding = 2.dp
-            )
-            ReactionTile(
-                if (joke.viewerFavorite) "Gemerkt" else "Merken",
-                Icons.Filled.Bookmark,
-                joke.viewerFavorite,
-                Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp),
-                onAuthRequired
-            )
-        }
     }
 }
 
@@ -1928,11 +1925,12 @@ private fun SafetyPanel(onAuthRequired: () -> Unit, onBlockAuthor: () -> Unit) {
 }
 
 @Composable
-private fun ScoreBadge(score: Int) {
+private fun ScoreBadge(score: Int, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = Comic.Blue,
-        border = BorderStroke(2.dp, Comic.Ink)
+        border = BorderStroke(2.dp, Comic.Ink),
+        modifier = modifier
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

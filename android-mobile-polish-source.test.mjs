@@ -56,11 +56,12 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Text\("Zurück", color = Comic\.Ink, fontWeight = FontWeight\.Black\)/, 'Detail screen should wrap the back action into a compact stitched pill');
   assert.match(mainActivity, /Pill\("Aus Feed \+ Random versteckt", Comic\.BlueSoft\)/, 'Blocked-users rows should explain the cross-surface effect in a compact badge');
   assert.match(mainActivity, /Text\("Profil-Stats", fontWeight = FontWeight\.Black, fontSize = 20\.sp\)/, 'Profile should group key stats into a calmer stats card under the hero');
-  assert.equal(mainActivity.includes('"Navigation"'), true, 'Bottom navigation should surface a small label above the tray');
-  assert.equal(mainActivity.includes('letterSpacing = 0.6.sp'), true, 'Bottom navigation label should use the tighter uppercase tray styling');
+  assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
+  assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should keep badge top-aligned and allow two-line titles/subtitles');
   assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp/, 'Android compact vote buttons should stay visibly broader than the default action tile');
-  assert.match(mainActivity, /private fun ScoreBadge\(score: Int\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
+  assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
+  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.padding\(top = \(-6\)\.dp, end = \(-8\)\.dp\)/, 'Feed cards should float the score badge over the top-right corner like iOS');
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });
 
