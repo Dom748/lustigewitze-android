@@ -16,14 +16,20 @@ const mobileApi = readFileSync(
   "utf8",
 );
 
-test("android auth sheet gates login and registration behind terms acceptance", () => {
+test("android auth sheet gates login registration and guest access behind terms acceptance", () => {
   assert.equal(source.includes("var acceptedTerms by rememberSaveable"), true, "AuthSheet should track accepted terms state");
   assert.equal(source.includes("var confirmedAdult by rememberSaveable"), true, "AuthSheet should track a separate adulthood confirmation state");
   assert.equal(source.includes("Nutzungsbedingungen / EULA"), true, "AuthSheet should show a visible terms / EULA block");
   assert.equal(source.includes("Checkbox(checked = acceptedTerms"), true, "AuthSheet should require an explicit checkbox");
   assert.equal(source.includes("Checkbox(checked = confirmedAdult"), true, "AuthSheet should require an explicit legal-age checkbox");
   assert.equal(source.includes("Ich bestätige, dass ich volljährig bin."), true, "AuthSheet should visibly mention the legal-age confirmation");
+  assert.equal(source.includes("Ohne Login testen"), true, "AuthSheet should expose a visible guest CTA header");
+  assert.equal(source.includes("Als Gast fortfahren"), true, "AuthSheet should expose a direct guest CTA");
+  assert.equal(source.includes("sessionStore.ensureGuestSession()"), true, "Guest CTA should trigger the shared Android guest session bootstrap");
   assert.equal(source.includes("enabled = acceptedTerms && confirmedAdult"), true, "Auth submit should stay disabled until terms and legal-age confirmation are accepted");
+  assert.equal(sessionStore.includes("suspend fun ensureGuestSession()"), true, "SessionStore should expose a guest-session helper");
+  assert.equal(mobileApi.includes("suspend fun createGuestSession()"), true, "Mobile API client should be able to bootstrap a guest session");
+  assert.equal(mobileApi.includes("@guest.lustigewitze.fun"), true, "Guest session bootstrap should use the backend guest email convention");
 });
 
 test("android profile screen exposes real profile stats and direct account deletion", () => {

@@ -5,6 +5,7 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -127,6 +128,16 @@ class MobileApiClient {
             .put("username", username)
             .put("email", email)
             .put("password", password)
+        val json = request("POST", "/api/mobile/auth/register", payload = payload)
+        return parseAuthResult(json)
+    }
+
+    suspend fun createGuestSession(): MobileAuthResult {
+        val seed = UUID.randomUUID().toString().replace("-", "").lowercase()
+        val payload = JSONObject()
+            .put("username", "gast_${seed.take(8)}")
+            .put("email", "guest-${seed.take(12)}@guest.lustigewitze.fun")
+            .put("password", "guest-${UUID.randomUUID().toString().lowercase()}-${seed.takeLast(12)}")
         val json = request("POST", "/api/mobile/auth/register", payload = payload)
         return parseAuthResult(json)
     }

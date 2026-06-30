@@ -1384,6 +1384,27 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
         sessionStore.authError?.let {
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
+        ComicCard {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Ohne Login testen", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text(
+                    "Du kannst direkt als Gast weitermachen, musst dafür aber die Bedingungen akzeptieren und bestätigen, dass du volljährig bist. Nach einer Woche erinnern wir dich ans Registrieren, damit deine Witze und Favoriten nicht verloren gehen.",
+                    color = Comic.Muted,
+                    lineHeight = 20.sp
+                )
+                Button(
+                    onClick = {
+                        scope.launch {
+                            sessionStore.ensureGuestSession()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = acceptedTerms && confirmedAdult && !sessionStore.isSubmittingAuth
+                ) {
+                    Text("Als Gast fortfahren", fontWeight = FontWeight.Black)
+                }
+            }
+        }
         Button(
             onClick = {
                 scope.launch {

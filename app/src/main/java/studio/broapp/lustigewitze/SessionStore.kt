@@ -100,6 +100,24 @@ class SessionStore(
         }
     }
 
+    suspend fun ensureGuestSession() {
+        if (currentUser != null || !accessToken.isNullOrBlank()) return
+        isSubmittingAuth = true
+        authError = null
+        try {
+            val result = apiClient.createGuestSession()
+            persistTokens(result.accessToken, result.refreshToken)
+            currentUser = result.user
+            loadProfile(result.user.username)
+        } catch (err: MobileApiException) {
+            authError = "Gastmodus konnte gerade nicht gestartet werden. Versuch es gleich noch einmal."
+        } catch (err: Exception) {
+            authError = "Gastmodus konnte gerade nicht gestartet werden. Versuch es gleich noch einmal."
+        } finally {
+            isSubmittingAuth = false
+        }
+    }
+
     suspend fun loadOwnProfile() {
         val token = accessToken ?: return
         try {
