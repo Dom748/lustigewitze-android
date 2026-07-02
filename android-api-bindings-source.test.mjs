@@ -58,6 +58,11 @@ test("android session restore and profile hydration catch generic parse/runtime 
   assert.match(sessionStore, /suspend fun loadProfile\(username: String\)[\s\S]*catch \(err: Exception\) \{[\s\S]*loadedProfile = null/);
   assert.match(sessionStore, /suspend fun login\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
   assert.match(sessionStore, /suspend fun register\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
+  assert.match(sessionStore, /suspend fun deleteAccount\([\s\S]*catch \(err: Exception\) \{[\s\S]*profileError =/);
+  assert.match(sessionStore, /suspend fun updateAccount\([\s\S]*catch \(err: Exception\) \{[\s\S]*profileError =/);
+  assert.match(sessionStore, /suspend fun loadBlockedUsers\([\s\S]*catch \(err: Exception\) \{[\s\S]*blockedUsersError =/);
+  assert.match(sessionStore, /suspend fun unblockUser\(user: BlockedUserSummary\): Boolean[\s\S]*catch \(err: Exception\) \{[\s\S]*blockedUsersError =/);
+  assert.match(sessionStore, /suspend fun blockAuthorAndReport\([\s\S]*catch \(err: Exception\) \{[\s\S]*blockMessage =/);
   assert.match(mainActivity, /var startupError by rememberSaveable \{ mutableStateOf<String\?>\(null\) \}/);
   assert.match(mainActivity, /LaunchedEffect\(sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);
   assert.match(mainActivity, /LaunchedEffect\(feedSort, feedCategory, sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);

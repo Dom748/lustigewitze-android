@@ -247,6 +247,8 @@ class SessionStore(
             clear()
         } catch (err: MobileApiException) {
             profileError = err.message
+        } catch (err: Exception) {
+            profileError = err.message ?: "Konto konnte gerade nicht gelöscht werden."
         } finally {
             isDeletingAccount = false
         }
@@ -271,6 +273,9 @@ class SessionStore(
         } catch (err: MobileApiException) {
             profileError = err.fields.values.firstOrNull() ?: err.message
             accountSuccessMessage = null
+        } catch (err: Exception) {
+            profileError = err.message ?: "Kontodaten konnten gerade nicht gespeichert werden."
+            accountSuccessMessage = null
         } finally {
             isUpdatingAccount = false
         }
@@ -288,6 +293,8 @@ class SessionStore(
             blockedUsers = apiClient.getBlockedUsers(token)
         } catch (err: MobileApiException) {
             blockedUsersError = err.message
+        } catch (err: Exception) {
+            blockedUsersError = err.message ?: "Blockierte User konnten nicht geladen werden."
         } finally {
             isLoadingBlockedUsers = false
         }
@@ -309,6 +316,9 @@ class SessionStore(
         } catch (err: MobileApiException) {
             blockedUsersError = err.message
             false
+        } catch (err: Exception) {
+            blockedUsersError = err.message ?: "User konnte gerade nicht entblockt werden."
+            false
         } finally {
             pendingBlockedUserId = null
         }
@@ -327,6 +337,9 @@ class SessionStore(
             return result.ok
         } catch (err: MobileApiException) {
             blockMessage = err.message
+            return false
+        } catch (err: Exception) {
+            blockMessage = err.message ?: "User konnte gerade nicht blockiert werden."
             return false
         } finally {
             isBlockingUser = false
