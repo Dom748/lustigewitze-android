@@ -341,17 +341,18 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     val context = LocalContext.current
     val sessionStore = remember { SessionStore(context = context, apiClient = MobileApiClient()) }
     val scope = rememberCoroutineScope()
-    var selectedTab by rememberSaveable { mutableStateOf(Tab.Feed) }
+    var selectedTabName by rememberSaveable { mutableStateOf(Tab.Feed.name) }
     var selectedJoke by remember { mutableStateOf<Joke?>(null) }
-    var selectedProfileUsername by rememberSaveable { mutableStateOf<String?>(null) }
-    var blockedAuthors by rememberSaveable { mutableStateOf(listOf<String>()) }
-    var blockedUserMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var showAuth by rememberSaveable { mutableStateOf(false) }
-    var showComposer by rememberSaveable { mutableStateOf(false) }
-    var accountDeleted by rememberSaveable { mutableStateOf(false) }
+    val selectedTab = Tab.entries.firstOrNull { it.name == selectedTabName } ?: Tab.Feed
+    var selectedProfileUsername by remember { mutableStateOf<String?>(null) }
+    var blockedAuthors by remember { mutableStateOf(listOf<String>()) }
+    var blockedUserMessage by remember { mutableStateOf<String?>(null) }
+    var showAuth by remember { mutableStateOf(false) }
+    var showComposer by remember { mutableStateOf(false) }
+    var accountDeleted by remember { mutableStateOf(false) }
     var feedSort by rememberSaveable { mutableStateOf("latest") }
     var feedCategory by rememberSaveable { mutableStateOf("all") }
-    var startupError by rememberSaveable { mutableStateOf<String?>(null) }
+    var startupError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(sessionStore.accessToken) {
         try {
@@ -383,7 +384,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
             blockedAuthors = (blockedAuthors + blockedKey).distinct()
             selectedJoke = null
             selectedProfileUsername = null
-            selectedTab = Tab.Feed
+            selectedTabName = Tab.Feed.name
         }
     }
 
@@ -398,7 +399,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
             message = message,
             onRetry = {
                 startupError = null
-                selectedTab = Tab.Feed
+                selectedTabName = Tab.Feed.name
                 selectedJoke = null
                 selectedProfileUsername = null
                 blockedUserMessage = null
@@ -431,7 +432,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
+                            onClick = { selectedTabName = tab.name },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { Text(tab.label, fontWeight = FontWeight.Black) },
                             colors = NavigationBarItemDefaults.colors(
@@ -684,8 +685,8 @@ private fun RandomScreen(
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit
 ) {
-    var currentIndex by rememberSaveable { mutableStateOf(0) }
-    var undoStack by rememberSaveable { mutableStateOf(listOf<Int>()) }
+    var currentIndex by remember { mutableStateOf(0) }
+    var undoStack by remember { mutableStateOf(listOf<Int>()) }
     var dragX by remember { mutableFloatStateOf(0f) }
     val haptics = LocalHapticFeedback.current
 

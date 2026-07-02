@@ -63,9 +63,13 @@ test("android session restore and profile hydration catch generic parse/runtime 
   assert.match(sessionStore, /suspend fun loadBlockedUsers\([\s\S]*catch \(err: Exception\) \{[\s\S]*blockedUsersError =/);
   assert.match(sessionStore, /suspend fun unblockUser\(user: BlockedUserSummary\): Boolean[\s\S]*catch \(err: Exception\) \{[\s\S]*blockedUsersError =/);
   assert.match(sessionStore, /suspend fun blockAuthorAndReport\([\s\S]*catch \(err: Exception\) \{[\s\S]*blockMessage =/);
-  assert.match(mainActivity, /var startupError by rememberSaveable \{ mutableStateOf<String\?>\(null\) \}/);
+  assert.match(mainActivity, /var selectedTabName by rememberSaveable \{ mutableStateOf\(Tab\.Feed\.name\) \}/);
+  assert.match(mainActivity, /val selectedTab = Tab\.entries\.firstOrNull \{ it\.name == selectedTabName \} \?: Tab\.Feed/);
+  assert.match(mainActivity, /var startupError by remember \{ mutableStateOf<String\?>\(null\) \}/);
   assert.match(mainActivity, /LaunchedEffect\(sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);
   assert.match(mainActivity, /LaunchedEffect\(feedSort, feedCategory, sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);
+  assert.match(mainActivity, /var currentIndex by remember \{ mutableStateOf\(0\) \}/);
+  assert.match(mainActivity, /var undoStack by remember \{ mutableStateOf\(listOf<Int>\(\)\) \}/);
   assert.match(mainActivity, /FatalStartupFallback\(/);
 });
 

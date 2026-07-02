@@ -76,8 +76,8 @@ test("android random screen keeps only one primary next-joke action and no extra
   assert.equal(source.includes("PrimaryButton(\"Neuen Random-Witz laden\""), true, "Random screen should expose one clear full-width next-joke CTA");
 });
 
-test("android random undo walks the local stack back instead of only resetting one stale index", () => {
-  assert.equal(source.includes("var undoStack by rememberSaveable"), true, "Random screen should keep a stack of previous random positions");
+test("android random undo keeps a local stack in memory instead of restoring stale saved positions on restart", () => {
+  assert.equal(source.includes("var undoStack by remember { mutableStateOf(listOf<Int>()) }"), true, "Random screen should keep a stack of previous random positions in normal in-memory state");
   assert.equal(source.includes("fun advanceRandomStack()"), true, "Random screen should advance through one helper so swipe/buttons keep undo state in sync");
   assert.equal(source.includes("undoStack = (undoStack + currentIndex).takeLast(8)"), true, "Random advance should push the current index onto the undo stack");
   assert.equal(source.includes("val previous = undoStack.last()"), true, "Undo should restore the most recent stack entry");
@@ -87,7 +87,7 @@ test("android random undo walks the local stack back instead of only resetting o
 });
 
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
-  assert.equal(source.includes("var selectedProfileUsername by rememberSaveable"), true, "App shell should track the selected profile username");
+  assert.equal(source.includes("var selectedProfileUsername by remember { mutableStateOf<String?>(null) }"), true, "App shell should track the selected profile username in regular in-memory state");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
   assert.equal(source.includes("modifier = Modifier.clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author chip is tapped");
   assert.equal(source.includes('val previewUsername = commentPreview.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"'), true, "Comment preview rows should derive a safe fallback username before wiring profile navigation");
@@ -96,7 +96,7 @@ test("android routes usernames into profile navigation from cards comments and l
 });
 
 test("android detail flow can block a user and surface blocked-user handling", () => {
-  assert.equal(source.includes("var blockedAuthors by rememberSaveable"), true, "App shell should persist blocked authors");
+  assert.equal(source.includes("var blockedAuthors by remember { mutableStateOf(listOf<String>()) }"), true, "App shell should keep blocked authors in regular in-memory state so stale saved bundles cannot crash startup");
   assert.equal(source.includes('ComicAction("User blockieren"'), true, "DetailScreen should expose a block-user action");
   assert.equal(sessionStore.includes('suspend fun blockAuthorAndReport(authorId: String, authorUsername: String, jokeId: String): Boolean'), true, "Blocking should keep the blocked username available for success feedback");
   assert.equal(sessionStore.includes('blockMessage = "blocked_user:${result.blockedUserId}:$authorUsername"'), true, "Blocking should surface a blocked_user marker plus username for Android feedback parity");
