@@ -251,16 +251,26 @@ private val feedCategoryOptions = listOf(
 )
 
 private fun MobileJoke.toAppJoke(): Joke {
+    val resolvedAuthorId = author?.id?.takeIf(String::isNotBlank) ?: "unknown-author-id"
+    val resolvedAuthorUsername = author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"
     return Joke(
         id = id,
         content = content,
         category = category.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
-        authorId = author.id,
-        authorUsername = author.username,
+        authorId = resolvedAuthorId,
+        authorUsername = resolvedAuthorUsername,
         score = score,
         favoriteCount = favoriteCount,
         commentCount = commentCount,
-        commentPreview = commentPreview,
+        commentPreview = commentPreview?.let { preview ->
+            val previewAuthor = preview.author?.let {
+                MobileCommentAuthor(
+                    id = it.id?.takeIf(String::isNotBlank),
+                    username = it.username?.takeIf(String::isNotBlank) ?: "unbekannt"
+                )
+            }
+            preview.copy(author = previewAuthor)
+        },
         viewerVote = viewerVote,
         viewerFavorite = viewerFavorite
     )
@@ -797,7 +807,14 @@ private fun DetailScreen(
             onBlockAuthor = { onBlockAuthor(joke.authorId, joke.authorUsername) }
         )
         Text("Kommentare", fontWeight = FontWeight.Black, fontSize = 20.sp)
-        CommentThreadPanel(comments = sessionStore.detailComments.filterNot { blockedAuthors.contains(it.author.id) || blockedAuthors.contains(it.author.username) }, isLoading = sessionStore.isLoadingComments, errorMessage = sessionStore.detailCommentsError, onOpenProfile = onOpenProfile)
+        CommentThreadPanel(
+            comments = sessionStore.detailComments.filterNot {
+                blockedAuthors.contains(it.author?.id) || blockedAuthors.contains(it.author?.username)
+            },
+            isLoading = sessionStore.isLoadingComments,
+            errorMessage = sessionStore.detailCommentsError,
+            onOpenProfile = onOpenProfile
+        )
         CommentComposerCard(sessionStore = sessionStore, jokeId = joke.id, onAuthRequired = onAuthRequired)
     }
 }
@@ -1951,6 +1968,7 @@ private fun ProfileHeroCard(resolvedProfile: ProfileSummary, isOwnProfile: Boole
 @Composable
 private fun JokeCommentPreviewCard(commentPreview: MobileCommentPreview?, commentCount: Int, onOpenProfile: (String) -> Unit) {
     if (commentPreview == null || commentCount <= 0) return
+    val previewUsername = commentPreview.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"
     Surface(
         color = Comic.Cream,
         shape = RoundedCornerShape(18.dp),
@@ -1967,8 +1985,8 @@ private fun JokeCommentPreviewCard(commentPreview: MobileCommentPreview?, commen
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TextButton(onClick = { onOpenProfile(commentPreview.author.username) }) {
-                        Text("@${commentPreview.author.username}", color = Comic.Ink, fontWeight = FontWeight.Black, maxLines = 1)
+                    TextButton(onClick = { onOpenProfile(previewUsername) }) {
+                        Text("@$previewUsername", color = Comic.Ink, fontWeight = FontWeight.Black, maxLines = 1)
                     }
                     Text(
                         text = if (commentCount == 1) "1 Kommentar" else "$commentCount Kommentare",
@@ -2091,6 +2109,7 @@ private fun CommentThreadPanel(
 
 @Composable
 private fun CommentCard(comment: MobileComment, onOpenProfile: (String) -> Unit, modifier: Modifier = Modifier) {
+    val commentUsername = comment.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"
     Surface(
         color = Comic.Cream,
         shape = RoundedCornerShape(18.dp),
@@ -2099,8 +2118,8 @@ private fun CommentCard(comment: MobileComment, onOpenProfile: (String) -> Unit,
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onOpenProfile(comment.author.username) }) {
-                    Text("@${comment.author.username}", fontWeight = FontWeight.Black)
+                TextButton(onClick = { onOpenProfile(commentUsername) }) {
+                    Text("@$commentUsername", fontWeight = FontWeight.Black)
                 }
                 if (comment.isOwner) {
                     Pill("Du", Comic.YellowSoft)

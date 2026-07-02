@@ -14,6 +14,16 @@ test('mobile api requests run off the main thread so feed loading does not fail 
   assert.match(mobileApi, /import kotlinx\.coroutines\.withContext/, 'Mobile API client should import withContext');
 });
 
+test('mobile api tolerates missing nested authors so the Android app does not crash on sparse production payloads', () => {
+  assert.match(mobileApi, /data class MobileJokeAuthor\([\s\S]*val id: String\? = null,[\s\S]*val username: String\? = null/, 'Joke author DTO should allow missing id/username values');
+  assert.match(mobileApi, /data class MobileCommentAuthor\([\s\S]*val id: String\? = null,[\s\S]*val username: String\? = null/, 'Comment author DTO should allow missing id/username values');
+  assert.match(mobileApi, /val author: MobileJokeAuthor\? = null/, 'Mobile jokes should allow a missing nested author object');
+  assert.match(mobileApi, /val author: MobileCommentAuthor\? = null/, 'Mobile comments should allow a missing nested author object');
+  assert.match(mobileApi, /val author = item\.optJSONObject\("author"\)/, 'Joke parsing should read authors with optJSONObject instead of crashing on missing objects');
+  assert.match(mobileApi, /val author = json\.optJSONObject\("author"\)/, 'Comment parsing should read authors with optJSONObject instead of crashing on missing objects');
+  assert.match(mainActivity, /val resolvedAuthorUsername = author\?\.username\?\.takeIf\(String::isNotBlank\) \?: "unbekannt"/, 'Joke mapping should fall back to a safe author username');
+});
+
 test('android feed styling uses a more stitched sheet and horizontal category scroller', () => {
   assert.match(mainActivity, /horizontalScroll\(rememberScrollState\(\)\)/, 'Feed filters should scroll horizontally instead of wrapping into cramped rows');
   assert.match(mainActivity, /Brush\.verticalGradient/, 'Android shell should use a stronger stitched gradient background');
@@ -81,4 +91,6 @@ test('android manifest wires a first-party launcher icon resource', () => {
   assert.equal(existsSync(resolve(root, 'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml')), true, 'Adaptive launcher icon resource should exist');
   assert.equal(existsSync(resolve(root, 'app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml')), true, 'Adaptive round launcher icon resource should exist');
   assert.equal(existsSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground.xml')), true, 'Launcher foreground drawable should exist');
+  assert.equal(existsSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground_inset.xml')), true, 'Launcher foreground inset drawable should exist for correct Android scaling');
+  assert.match(readFileSync(resolve(root, 'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml'), 'utf8'), /@drawable\/ic_launcher_foreground_inset/, 'Adaptive launcher icon should route through the inset foreground wrapper');
 });

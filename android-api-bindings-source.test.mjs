@@ -101,7 +101,7 @@ test("android detail screen mirrors ios comment api wiring instead of a read-onl
   assert.match(sessionStore, /suspend fun loadComments\(jokeId: String\)/);
   assert.match(sessionStore, /suspend fun addComment\(jokeId: String, content: String\): Boolean/);
   assert.match(mainActivity, /sessionStore\.loadComments\(joke\.id\)/);
-  assert.match(mainActivity, /CommentThreadPanel\(comments = sessionStore\.detailComments/);
+  assert.match(mainActivity, /CommentThreadPanel\([\s\S]*comments = sessionStore\.detailComments/);
   assert.match(mainActivity, /CommentComposerCard\(sessionStore = sessionStore, jokeId = joke\.id, onAuthRequired = onAuthRequired\)/);
   assert.doesNotMatch(mainActivity, /readOnly = true/);
   assert.match(mainActivity, /placeholder = \{ Text\("Kommentar schreiben\.\.\."\) \}/);

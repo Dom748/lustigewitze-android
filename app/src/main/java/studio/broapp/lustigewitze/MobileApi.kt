@@ -45,19 +45,19 @@ data class MobileProfileStats(
 )
 
 data class MobileJokeAuthor(
-    val id: String,
-    val username: String
+    val id: String? = null,
+    val username: String? = null
 )
 
 data class MobileCommentAuthor(
-    val id: String,
-    val username: String
+    val id: String? = null,
+    val username: String? = null
 )
 
 data class MobileCommentPreview(
     val id: String,
     val content: String,
-    val author: MobileCommentAuthor
+    val author: MobileCommentAuthor? = null
 )
 
 data class MobileComment(
@@ -67,7 +67,7 @@ data class MobileComment(
     val deletedAt: String?,
     val parentId: String?,
     val isOwner: Boolean,
-    val author: MobileCommentAuthor,
+    val author: MobileCommentAuthor? = null,
     val replies: List<MobileComment>
 )
 
@@ -79,7 +79,7 @@ data class MobileJoke(
     val id: String,
     val content: String,
     val category: String,
-    val author: MobileJokeAuthor,
+    val author: MobileJokeAuthor? = null,
     val score: Int,
     val favoriteCount: Int,
     val legendCount: Int,
@@ -337,29 +337,33 @@ class MobileApiClient {
         return buildList {
             for (index in 0 until array.length()) {
                 val item = array.getJSONObject(index)
-                val author = item.getJSONObject("author")
+                val author = item.optJSONObject("author")
                 add(
                     MobileJoke(
                         id = item.getString("id"),
                         content = item.getString("content"),
                         category = item.getString("category"),
-                        author = MobileJokeAuthor(
-                            id = author.getString("id"),
-                            username = author.getString("username")
-                        ),
+                        author = author?.let {
+                            MobileJokeAuthor(
+                                id = it.optString("id").takeIf(String::isNotBlank),
+                                username = it.optString("username").takeIf(String::isNotBlank)
+                            )
+                        },
                         score = item.optInt("score", 0),
                         favoriteCount = item.optInt("favoriteCount", 0),
                         legendCount = item.optInt("legendCount", 0),
                         commentCount = item.optInt("commentCount", 0),
                         commentPreview = item.optJSONObject("commentPreview")?.let { preview ->
-                            val previewAuthor = preview.getJSONObject("author")
+                            val previewAuthor = preview.optJSONObject("author")
                             MobileCommentPreview(
                                 id = preview.getString("id"),
                                 content = preview.getString("content"),
-                                author = MobileCommentAuthor(
-                                    id = previewAuthor.getString("id"),
-                                    username = previewAuthor.getString("username")
-                                )
+                                author = previewAuthor?.let {
+                                    MobileCommentAuthor(
+                                        id = it.optString("id").takeIf(String::isNotBlank),
+                                        username = it.optString("username").takeIf(String::isNotBlank)
+                                    )
+                                }
                             )
                         },
                         viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") },
@@ -381,7 +385,7 @@ class MobileApiClient {
     }
 
     private fun parseComment(json: JSONObject): MobileComment {
-        val author = json.getJSONObject("author")
+        val author = json.optJSONObject("author")
         return MobileComment(
             id = json.getString("id"),
             content = json.getString("content"),
@@ -389,10 +393,12 @@ class MobileApiClient {
             deletedAt = json.optString("deletedAt").takeIf { it.isNotBlank() && it != "null" },
             parentId = json.optString("parentId").takeIf { it.isNotBlank() && it != "null" },
             isOwner = json.optBoolean("isOwner", false),
-            author = MobileCommentAuthor(
-                id = author.getString("id"),
-                username = author.getString("username")
-            ),
+            author = author?.let {
+                MobileCommentAuthor(
+                    id = it.optString("id").takeIf(String::isNotBlank),
+                    username = it.optString("username").takeIf(String::isNotBlank)
+                )
+            },
             replies = parseComments(json.optJSONArray("replies"))
         )
     }
