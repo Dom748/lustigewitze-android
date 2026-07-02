@@ -58,6 +58,10 @@ test("android session restore and profile hydration catch generic parse/runtime 
   assert.match(sessionStore, /suspend fun loadProfile\(username: String\)[\s\S]*catch \(err: Exception\) \{[\s\S]*loadedProfile = null/);
   assert.match(sessionStore, /suspend fun login\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
   assert.match(sessionStore, /suspend fun register\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
+  assert.match(mainActivity, /var startupError by rememberSaveable \{ mutableStateOf<String\?>\(null\) \}/);
+  assert.match(mainActivity, /LaunchedEffect\(sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);
+  assert.match(mainActivity, /LaunchedEffect\(feedSort, feedCategory, sessionStore\.accessToken\) \{[\s\S]*catch \(err: Exception\) \{[\s\S]*startupError =/);
+  assert.match(mainActivity, /FatalStartupFallback\(/);
 });
 
 test("android ui is wired to the real session store instead of local demo-only account actions", () => {

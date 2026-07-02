@@ -351,15 +351,24 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     var accountDeleted by rememberSaveable { mutableStateOf(false) }
     var feedSort by rememberSaveable { mutableStateOf("latest") }
     var feedCategory by rememberSaveable { mutableStateOf("all") }
+    var startupError by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(sessionStore.accessToken) {
-        if (!sessionStore.accessToken.isNullOrBlank()) {
-            sessionStore.loadOwnProfile()
+        try {
+            if (!sessionStore.accessToken.isNullOrBlank()) {
+                sessionStore.loadOwnProfile()
+            }
+        } catch (err: Exception) {
+            startupError = err.message ?: "Gespeicherte Sitzung konnte nicht geladen werden."
         }
     }
 
     LaunchedEffect(feedSort, feedCategory, sessionStore.accessToken) {
-        sessionStore.loadFeed(sort = feedSort, category = feedCategory)
+        try {
+            sessionStore.loadFeed(sort = feedSort, category = feedCategory)
+        } catch (err: Exception) {
+            startupError = err.message ?: "Feed konnte beim Start nicht geladen werden."
+        }
     }
 
     LaunchedEffect(sessionStore.blockMessage) {
@@ -383,6 +392,25 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     } else {
         demoJokes
     }).filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }
+
+    startupError?.let { message ->
+        FatalStartupFallback(
+            message = message,
+            onRetry = {
+                startupError = null
+                selectedTab = Tab.Feed
+                selectedJoke = null
+                selectedProfileUsername = null
+                blockedUserMessage = null
+                showAuth = false
+                showComposer = false
+                scope.launch {
+                    sessionStore.loadFeed(sort = feedSort, category = feedCategory)
+                }
+            }
+        )
+        return
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -2357,6 +2385,29 @@ private fun ComicAction(title: String, icon: ImageVector, color: Color, modifier
         Icon(icon, null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
         Text(title, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+private fun FatalStartupFallback(message: String, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ComicCard(modifier = Modifier.fillMaxWidth()) {
+            Text("App abgefangen", fontWeight = FontWeight.Black, fontSize = 26.sp)
+            Text(
+                "Beim Start ist ein Fehler passiert. Statt direkt abzustürzen zeigt Android jetzt diese Fallback-Karte.",
+                color = Comic.Muted,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(message, color = Comic.Red, fontWeight = FontWeight.Black)
+            Spacer(Modifier.height(14.dp))
+            PrimaryButton("Erneut laden", Icons.Filled.Refresh, onClick = onRetry)
+        }
     }
 }
 
