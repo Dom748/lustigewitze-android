@@ -53,6 +53,13 @@ test("android persists session tokens and exposes async auth account helpers", (
   assert.match(sessionStore, /suspend fun unblockUser\(user: BlockedUserSummary\): Boolean/);
 });
 
+test("android session restore and profile hydration catch generic parse/runtime failures before Compose can crash", () => {
+  assert.match(sessionStore, /suspend fun loadOwnProfile\([\s\S]*catch \(err: Exception\) \{[\s\S]*clear\(\)/);
+  assert.match(sessionStore, /suspend fun loadProfile\(username: String\)[\s\S]*catch \(err: Exception\) \{[\s\S]*loadedProfile = null/);
+  assert.match(sessionStore, /suspend fun login\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
+  assert.match(sessionStore, /suspend fun register\([\s\S]*catch \(err: Exception\) \{[\s\S]*authError =/);
+});
+
 test("android ui is wired to the real session store instead of local demo-only account actions", () => {
   assert.match(mainActivity, /val sessionStore = remember \{ SessionStore\(/);
   assert.match(mainActivity, /LaunchedEffect\(feedSort, feedCategory, sessionStore\.accessToken\) \{[\s\S]*sessionStore\.loadFeed\(sort = feedSort, category = feedCategory\)/);

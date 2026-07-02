@@ -80,6 +80,8 @@ class SessionStore(
             loadProfile(result.user.username)
         } catch (err: MobileApiException) {
             authError = err.fields.values.firstOrNull() ?: err.message
+        } catch (err: Exception) {
+            authError = err.message ?: "Login konnte gerade nicht abgeschlossen werden."
         } finally {
             isSubmittingAuth = false
         }
@@ -95,6 +97,8 @@ class SessionStore(
             loadProfile(result.user.username)
         } catch (err: MobileApiException) {
             authError = err.fields.values.firstOrNull() ?: err.message
+        } catch (err: Exception) {
+            authError = err.message ?: "Registrierung konnte gerade nicht abgeschlossen werden."
         } finally {
             isSubmittingAuth = false
         }
@@ -127,6 +131,9 @@ class SessionStore(
             }
         } catch (err: MobileApiException) {
             profileError = err.message
+        } catch (err: Exception) {
+            profileError = err.message ?: "Sitzung konnte nicht wiederhergestellt werden."
+            clear()
         }
     }
 
@@ -137,6 +144,9 @@ class SessionStore(
             loadedProfile = apiClient.getProfile(username, accessToken)
         } catch (err: MobileApiException) {
             profileError = err.message
+        } catch (err: Exception) {
+            profileError = err.message ?: "Profil konnte nicht geladen werden."
+            loadedProfile = null
         } finally {
             isLoadingProfile = false
         }
