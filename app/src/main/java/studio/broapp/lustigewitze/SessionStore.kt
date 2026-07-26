@@ -40,6 +40,8 @@ class SessionStore(
         private set
     var isPostingComment by mutableStateOf(false)
         private set
+    var isCreatingJoke by mutableStateOf(false)
+        private set
     var hasLoadedFeed by mutableStateOf(false)
         private set
     var isLoadingMoreFeed by mutableStateOf(false)
@@ -63,6 +65,10 @@ class SessionStore(
     var blockedUsersError by mutableStateOf<String?>(null)
         private set
     var blockedUsersSuccessMessage by mutableStateOf<String?>(null)
+        private set
+    var createJokeError by mutableStateOf<String?>(null)
+        private set
+    var createJokeSuccessMessage by mutableStateOf<String?>(null)
         private set
     var isLoadingBlockedUsers by mutableStateOf(false)
         private set
@@ -218,6 +224,38 @@ class SessionStore(
         }
     }
 
+    suspend fun createJoke(content: String, category: String): Boolean {
+        val token = accessToken ?: run {
+            createJokeError = "Bitte logge dich ein, um Witze zu veröffentlichen."
+            return false
+        }
+        val trimmed = content.trim()
+        if (trimmed.isEmpty() || isCreatingJoke) {
+            return false
+        }
+        isCreatingJoke = true
+        createJokeError = null
+        createJokeSuccessMessage = null
+        return try {
+            val created = apiClient.createJoke(content = trimmed, category = category, accessToken = token)
+            feedItems = listOf(created) + feedItems.filterNot { it.id == created.id }
+            hasLoadedFeed = true
+            createJokeSuccessMessage = "Witz veröffentlicht"
+            currentUser?.username?.let { username ->
+                loadProfile(username)
+            }
+            true
+        } catch (err: MobileApiException) {
+            createJokeError = err.fields.values.firstOrNull() ?: err.message
+            false
+        } catch (err: Exception) {
+            createJokeError = err.message ?: "Witz konnte nicht veröffentlicht werden."
+            false
+        } finally {
+            isCreatingJoke = false
+        }
+    }
+
     suspend fun loadMoreFeed(sort: String, category: String) {
         val cursor = nextFeedCursor ?: return
         if (isLoadingMoreFeed || isLoadingFeed) return
@@ -283,6 +321,11 @@ class SessionStore(
 
     fun clearAccountSuccessMessage() {
         accountSuccessMessage = null
+    }
+
+    fun clearCreateJokeFeedback() {
+        createJokeError = null
+        createJokeSuccessMessage = null
     }
 
     suspend fun loadBlockedUsers() {
@@ -353,6 +396,7 @@ class SessionStore(
         detailCommentsError = null
         blockMessage = null
         blockedUsersError = null
+        createJokeError = null
     }
 
     private fun persistTokens(nextAccessToken: String, nextRefreshToken: String) {
@@ -374,6 +418,8 @@ class SessionStore(
         blockedUsersSuccessMessage = null
         detailComments = emptyList()
         detailCommentsError = null
+        createJokeError = null
+        createJokeSuccessMessage = null
         feedItems = emptyList()
         feedError = null
         nextFeedCursor = null

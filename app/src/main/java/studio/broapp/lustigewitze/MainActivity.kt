@@ -250,6 +250,17 @@ private val feedCategoryOptions = listOf(
     FeedCategoryOption("Familie", "familie")
 )
 
+private fun composerCategoryToApiValue(category: String): String {
+    return when (category) {
+        "Arbeit" -> "arbeit"
+        "Tech" -> "tech"
+        "Alltag" -> "alltag"
+        LONG_JOKE_CATEGORY -> "lange-witze"
+        "Familie" -> "familie"
+        else -> category.lowercase()
+    }
+}
+
 private fun MobileJoke.toAppJoke(): Joke {
     val resolvedAuthorId = author?.id?.takeIf(String::isNotBlank) ?: "unknown-author-id"
     val resolvedAuthorUsername = author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"
@@ -570,8 +581,18 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
     }
 
     if (showComposer) {
-        ModalBottomSheet(onDismissRequest = { showComposer = false }) {
-            ComposerSheet(onDone = { showComposer = false }, onAuthRequired = { showAuth = true })
+        ModalBottomSheet(onDismissRequest = {
+            sessionStore.clearCreateJokeFeedback()
+            showComposer = false
+        }) {
+            ComposerSheet(
+                sessionStore = sessionStore,
+                onDone = {
+                    sessionStore.clearCreateJokeFeedback()
+                    showComposer = false
+                },
+                onAuthRequired = { showAuth = true },
+            )
         }
     }
 }
@@ -1544,7 +1565,10 @@ private fun AuthSheet(sessionStore: SessionStore, onDone: () -> Unit) {
 }
 
 @Composable
-private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
+private fun ComposerSheet(sessionStore: SessionStore, onDone: () -> Unit, onAuthRequired: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val currentUser = sessionStore.currentUser
+    val requiresAccountForPublish = currentUser == null || currentUser.isGuest
     var text by rememberSaveable { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableStateOf("Arbeit") }
     var hasAutoSelectedLongJokes by rememberSaveable { mutableStateOf(false) }
@@ -1555,6 +1579,7 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
         selectedCategory == LONG_JOKE_CATEGORY && trimmedText.length > LONG_JOKE_MAX_CHARS -> "Lange Witze dürfen höchstens 2500 Zeichen haben."
         else -> null
     }
+    val canPublish = trimmedText.isNotEmpty() && lengthErrorMessage == null && !sessionStore.isCreatingJoke
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(18.dp).windowInsetsPadding(WindowInsets.navigationBars),
@@ -1571,6 +1596,7 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
                 } else if (text.trim().length <= AUTO_LONG_JOKE_THRESHOLD) {
                     hasAutoSelectedLongJokes = false
                 }
+                sessionStore.clearCreateJokeFeedback()
             },
             label = { Text("Dein Witz") },
             minLines = 5,
@@ -1583,14 +1609,53 @@ private fun ComposerSheet(onDone: () -> Unit, onAuthRequired: () -> Unit) {
         lengthErrorMessage?.let {
             Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
         }
+        sessionStore.createJokeError?.let {
+            Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
+        }
+        sessionStore.createJokeSuccessMessage?.let {
+            Text(it, color = Comic.Ink, fontWeight = FontWeight.Black)
+        }
+        if (requiresAccountForPublish) {
+            ComicCard {
+                Text("Zum Veröffentlichen brauchst du einen normalen Account.", fontWeight = FontWeight.Black)
+                Text(
+                    "Ohne Login kannst du weiter browsen. Für neue Witze musst du dich erst einloggen oder dein Gastkonto umwandeln.",
+                    color = Comic.Muted,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Arbeit", "Tech", "Alltag", LONG_JOKE_CATEGORY).forEach { category ->
-                Segment(category, selected = selectedCategory == category) { selectedCategory = category }
+                Segment(category, selected = selectedCategory == category) {
+                    selectedCategory = category
+                    sessionStore.clearCreateJokeFeedback()
+                }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = onDone, modifier = Modifier.weight(1f)) { Text("Entwurf schliessen") }
-            Button(onClick = onAuthRequired, modifier = Modifier.weight(1f), enabled = lengthErrorMessage == null) { Text("Login fuer Publish") }
+            Button(
+                onClick = {
+                    if (requiresAccountForPublish) {
+                        onAuthRequired()
+                    } else {
+                        scope.launch {
+                            val created = sessionStore.createJoke(
+                                content = trimmedText,
+                                category = composerCategoryToApiValue(selectedCategory)
+                            )
+                            if (created) {
+                                onDone()
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                enabled = if (requiresAccountForPublish) lengthErrorMessage == null else canPublish
+            ) {
+                Text(if (requiresAccountForPublish) "Login fuer Publish" else if (sessionStore.isCreatingJoke) "Veröffentliche..." else "Jetzt posten")
+            }
         }
     }
 }

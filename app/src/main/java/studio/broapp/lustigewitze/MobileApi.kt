@@ -201,6 +201,14 @@ class MobileApiClient {
         return MobileCommentResponse(items = parseComments(json.optJSONArray("items")))
     }
 
+    suspend fun createJoke(content: String, category: String, accessToken: String): MobileJoke {
+        val payload = JSONObject()
+            .put("content", content)
+            .put("category", category)
+        val json = request("POST", "/api/mobile/jokes", payload = payload, accessToken = accessToken)
+        return parseJoke(json)
+    }
+
     suspend fun addComment(jokeId: String, content: String, accessToken: String): MobileComment {
         val payload = JSONObject()
             .put("content", content)
@@ -327,8 +335,43 @@ class MobileApiClient {
         return MobileProfileStats(
             jokeCount = json.optInt("jokeCount", 0),
             totalScore = json.optInt("totalScore", 0),
-            averageScore = json.optDouble("averageScore", 0.0).toInt(),
-            favoriteCategory = json.optString("favoriteCategory", "Noch offen")
+            averageScore = json.optInt("averageScore", 0),
+            favoriteCategory = json.optString("favoriteCategory")
+        )
+    }
+
+    private fun parseJoke(item: JSONObject): MobileJoke {
+        val author = item.optJSONObject("author")
+        return MobileJoke(
+            id = item.getString("id"),
+            content = item.getString("content"),
+            category = item.getString("category"),
+            author = author?.let {
+                MobileJokeAuthor(
+                    id = it.optString("id").takeIf(String::isNotBlank),
+                    username = it.optString("username").takeIf(String::isNotBlank)
+                )
+            },
+            score = item.optInt("score", 0),
+            favoriteCount = item.optInt("favoriteCount", 0),
+            legendCount = item.optInt("legendCount", 0),
+            commentCount = item.optInt("commentCount", 0),
+            commentPreview = item.optJSONObject("commentPreview")?.let { preview ->
+                val previewAuthor = preview.optJSONObject("author")
+                MobileCommentPreview(
+                    id = preview.getString("id"),
+                    content = preview.getString("content"),
+                    author = previewAuthor?.let {
+                        MobileCommentAuthor(
+                            id = it.optString("id").takeIf(String::isNotBlank),
+                            username = it.optString("username").takeIf(String::isNotBlank)
+                        )
+                    }
+                )
+            },
+            viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") },
+            viewerFavorite = item.optBoolean("viewerFavorite", false),
+            createdAt = item.optString("createdAt")
         )
     }
 
@@ -336,41 +379,7 @@ class MobileApiClient {
         if (array == null) return emptyList()
         return buildList {
             for (index in 0 until array.length()) {
-                val item = array.getJSONObject(index)
-                val author = item.optJSONObject("author")
-                add(
-                    MobileJoke(
-                        id = item.getString("id"),
-                        content = item.getString("content"),
-                        category = item.getString("category"),
-                        author = author?.let {
-                            MobileJokeAuthor(
-                                id = it.optString("id").takeIf(String::isNotBlank),
-                                username = it.optString("username").takeIf(String::isNotBlank)
-                            )
-                        },
-                        score = item.optInt("score", 0),
-                        favoriteCount = item.optInt("favoriteCount", 0),
-                        legendCount = item.optInt("legendCount", 0),
-                        commentCount = item.optInt("commentCount", 0),
-                        commentPreview = item.optJSONObject("commentPreview")?.let { preview ->
-                            val previewAuthor = preview.optJSONObject("author")
-                            MobileCommentPreview(
-                                id = preview.getString("id"),
-                                content = preview.getString("content"),
-                                author = previewAuthor?.let {
-                                    MobileCommentAuthor(
-                                        id = it.optString("id").takeIf(String::isNotBlank),
-                                        username = it.optString("username").takeIf(String::isNotBlank)
-                                    )
-                                }
-                            )
-                        },
-                        viewerVote = item.optInt("viewerVote").takeIf { !item.isNull("viewerVote") },
-                        viewerFavorite = item.optBoolean("viewerFavorite", false),
-                        createdAt = item.optString("createdAt")
-                    )
-                )
+                add(parseJoke(array.getJSONObject(index)))
             }
         }
     }
