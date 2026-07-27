@@ -24,11 +24,15 @@ test('mobile api tolerates missing nested authors so the Android app does not cr
   assert.match(mainActivity, /val resolvedAuthorUsername = author\?\.username\?\.takeIf\(String::isNotBlank\) \?: "unbekannt"/, 'Joke mapping should fall back to a safe author username');
 });
 
-test('android feed styling uses a more stitched sheet and horizontal category scroller', () => {
+test('android feed styling keeps narrow filters compact and visibly scrollable', () => {
   assert.match(mainActivity, /horizontalScroll\(rememberScrollState\(\)\)/, 'Feed filters should scroll horizontally instead of wrapping into cramped rows');
   assert.match(mainActivity, /Brush\.verticalGradient/, 'Android shell should use a stronger stitched gradient background');
   assert.match(mainActivity, /RoundedCornerShape\(24\.dp\)/, 'Core comic cards should use softer stitched corners');
-  assert.match(mainActivity, /Pill\("Filter", Comic\.Yellow\)/, 'Feed filter card should lead with a compact filter badge');
+  assert.match(mainActivity, /ComicCard\(modifier = Modifier\.padding\(top = 10\.dp\), contentPadding = 14\.dp\)/, 'Feed filter card should use compact internal padding');
+  assert.match(mainActivity, /Text\(\s*"Kategorien ↔"/, 'Category row should visibly communicate horizontal scrolling');
+  assert.match(mainActivity, /private fun CompactSegment\(/, 'Category filters should use a narrow-screen chip component');
+  assert.match(mainActivity, /CompactSegment\(option\.label, selected = selectedCategory == option\.apiValue\)/, 'Feed categories should use compact chips so the first options fit without clipping');
+  assert.doesNotMatch(mainActivity, /Pill\("Filter", Comic\.Yellow\)/, 'Feed filter should not waste a full row on a redundant Filter badge');
   assert.doesNotMatch(mainActivity, /Kategorien laufen jetzt horizontal, damit der Feed frei scrollt und das Stitch-Layout sauber bleibt\./, 'Feed filter card should drop the long helper paragraph in favor of a tighter stitched layout');
 });
 
@@ -82,10 +86,13 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Text\("Profil-Stats", fontWeight = FontWeight\.Black, fontSize = 20\.sp\)/, 'Profile should group key stats into a calmer stats card under the hero');
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
-  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should keep badge top-aligned and allow two-line titles/subtitles');
+  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 28\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
+  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 12\.dp/, 'Screen heroes should keep a safe visible gap below the fixed utility bar');
+  assert.match(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The utility bar should use a compact brand mark instead of duplicating the full screen title');
+  assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The utility bar should not duplicate the Lustige Witze screen title');
   assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/, 'All four joke actions should share the available card width without a wrapped bookmark label');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
-  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.offset\(x = 0\.dp, y = \(-6\)\.dp\)/, 'Score badges should overlap vertically without protruding beyond the right screen edge');
+  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.offset\(x = \(-12\)\.dp, y = 12\.dp\)/, 'Score badges should sit fully inside the top-right card edge');
   assert.match(mainActivity, /Pill\("Kommentare \(\$\{comments\.size\}\)", Comic\.BlueSoft\)/, 'Random comments should use one compact count label');
   assert.match(mainActivity, /if \(showComposer\) "Schließen" else "Kommentar"/, 'Random comment action should use a short label on narrow screens');
   assert.doesNotMatch(mainActivity, /\.padding\([^\n]*\(-\d+\)\.dp/, 'Compose padding must never receive negative values');

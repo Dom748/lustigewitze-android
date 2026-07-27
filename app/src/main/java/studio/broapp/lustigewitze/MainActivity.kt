@@ -155,7 +155,7 @@ private const val STANDARD_JOKE_MAX_CHARS = 420
 private const val LONG_JOKE_MAX_CHARS = 2500
 private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden automatisch als Lange Witze gespeichert."
 private const val JOKE_CARD_PREVIEW_LIMIT = 400
-private val MOBILE_HEADER_TOP_INSET = 8.dp
+private val MOBILE_HEADER_TOP_INSET = 12.dp
 
 private val demoJokes = listOf(
     Joke(
@@ -621,25 +621,27 @@ private fun FeedScreen(
             feedError?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
-            ComicCard(modifier = Modifier.padding(top = 12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Pill("Filter", Comic.Yellow)
-                    Spacer(Modifier.weight(1f))
-                    Pill(if (selectedCategory == "all") "Alle Kategorien" else selectedCategory, Comic.BlueSoft)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+            ComicCard(modifier = Modifier.padding(top = 10.dp), contentPadding = 14.dp) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
                     Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
                     Segment("Reload", selected = false, onClick = onRefresh)
                 }
+                Text(
+                    "Kategorien ↔",
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
-                        .padding(top = 12.dp)
+                        .padding(top = 4.dp)
                         .horizontalScroll(rememberScrollState())
                 ) {
                     feedCategoryOptions.forEach { option ->
-                        Segment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
+                        CompactSegment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
                     }
                 }
             }
@@ -1659,13 +1661,9 @@ private fun CompactUtilityBar(
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            Text(
-                "LustigeWitze",
-                color = if (darkMode) Comic.Cream else Comic.Ink,
-                fontWeight = FontWeight.Black,
-                fontSize = 16.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Box(modifier = Modifier.weight(1f)) {
+                Pill("LW", Comic.Yellow)
+            }
             UtilityIconButton(
                 onClick = onToggleTheme,
                 containerColor = if (darkMode) Comic.Blue else Comic.Paper,
@@ -1891,7 +1889,7 @@ private fun JokeCard(
             score = joke.score,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 0.dp, y = (-6).dp)
+                .offset(x = (-12).dp, y = 12.dp)
         )
     }
 }
@@ -1900,24 +1898,24 @@ private fun JokeCard(
 private fun ScreenHeader(title: String, subtitle: String, badge: String) {
     Surface(
         color = Comic.Paper,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .padding(4.dp)
-                .border(BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.5f)), RoundedCornerShape(24.dp))
-                .padding(horizontal = 18.dp, vertical = 16.dp)
+                .border(BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.5f)), RoundedCornerShape(20.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
                     Text(
                         title,
-                        fontSize = 32.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
-                        lineHeight = 36.sp,
+                        lineHeight = 32.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1940,14 +1938,18 @@ private fun ScreenHeader(title: String, subtitle: String, badge: String) {
 }
 
 @Composable
-private fun ComicCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun ComicCard(
+    modifier: Modifier = Modifier,
+    contentPadding: Dp = 18.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(Comic.Ink, RoundedCornerShape(24.dp))
             .padding(3.dp)
             .background(Comic.Paper, RoundedCornerShape(24.dp))
-            .padding(18.dp),
+            .padding(contentPadding),
         content = content
     )
 }
@@ -1971,6 +1973,25 @@ private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
             labelColor = Comic.Ink
         )
     )
+}
+
+@Composable
+private fun CompactSegment(title: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) Comic.Yellow else Comic.Paper,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(2.dp, Comic.Ink)
+    ) {
+        Text(
+            title,
+            color = Comic.Ink,
+            fontWeight = FontWeight.Black,
+            fontSize = 12.sp,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+        )
+    }
 }
 
 @Composable
