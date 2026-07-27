@@ -28,7 +28,7 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.match(mainActivity, /Modifier\.size\(if \(showTitle\) 24\.dp else 32\.dp\)/);
   assert.match(mainActivity, /else "Merken"/);
   assert.match(mainActivity, /Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/);
-  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 12\.dp/);
+  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Lustige Witze"/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Zufallswitz"/);
   assert.match(mainActivity, /statusBarsPadding\(\)/);

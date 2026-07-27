@@ -155,7 +155,7 @@ private const val STANDARD_JOKE_MAX_CHARS = 420
 private const val LONG_JOKE_MAX_CHARS = 2500
 private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden automatisch als Lange Witze gespeichert."
 private const val JOKE_CARD_PREVIEW_LIMIT = 400
-private val MOBILE_HEADER_TOP_INSET = 12.dp
+private val MOBILE_HEADER_TOP_INSET = 6.dp
 
 private val demoJokes = listOf(
     Joke(
@@ -728,7 +728,8 @@ private fun RandomScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 6.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
@@ -1814,6 +1815,7 @@ private fun JokeCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Pill(joke.category, Comic.Yellow)
                 Spacer(Modifier.weight(1f))
+                ScoreBadge(score = joke.score)
             }
             Text(
                 visibleContent,
@@ -1885,12 +1887,6 @@ private fun JokeCard(
                 )
             }
         }
-        ScoreBadge(
-            score = joke.score,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = (-12).dp, y = 12.dp)
-        )
     }
 }
 

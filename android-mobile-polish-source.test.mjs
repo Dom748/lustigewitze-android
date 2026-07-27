@@ -53,7 +53,7 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
   assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
   assert.match(mainActivity, /verticalScroll\(rememberScrollState\(\)\)/, 'Random screen should allow vertical scrolling when the active joke and comments exceed the viewport height');
-  assert.match(mainActivity, /\.padding\(horizontal = 20\.dp, vertical = 14\.dp\)/, 'Random content should reserve safe horizontal room for card movement');
+  assert.match(mainActivity, /\.padding\(horizontal = 20\.dp\)[\s\S]*\.padding\(top = 6\.dp, bottom = 24\.dp\)/, 'Random content should reserve safe horizontal room and bottom clearance above navigation');
   assert.match(mainActivity, /\.rotate\(dragX \/ 80f\)/, 'Random swipe rotation should stay subtle enough to avoid edge clipping');
   assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
   assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
@@ -87,12 +87,13 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 28\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
-  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 12\.dp/, 'Screen heroes should keep a safe visible gap below the fixed utility bar');
+  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/, 'Screen heroes should keep a compact visible gap below the fixed utility bar');
   assert.match(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The utility bar should use a compact brand mark instead of duplicating the full screen title');
   assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The utility bar should not duplicate the Lustige Witze screen title');
   assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/, 'All four joke actions should share the available card width without a wrapped bookmark label');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
-  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.offset\(x = \(-12\)\.dp, y = 12\.dp\)/, 'Score badges should sit fully inside the top-right card edge');
+  assert.match(mainActivity, /ComicCard\([\s\S]*Row\(verticalAlignment = Alignment\.CenterVertically\) \{[\s\S]*Pill\(joke\.category, Comic\.Yellow\)[\s\S]*Spacer\(Modifier\.weight\(1f\)\)[\s\S]*ScoreBadge\(score = joke\.score\)/, 'Score badges should live inside the joke-card header row');
+  assert.doesNotMatch(mainActivity, /ScoreBadge\([\s\S]{0,220}\.offset\(/, 'Score badges must not overlap or protrude beyond the card outline');
   assert.match(mainActivity, /Pill\("Kommentare \(\$\{comments\.size\}\)", Comic\.BlueSoft\)/, 'Random comments should use one compact count label');
   assert.match(mainActivity, /if \(showComposer\) "Schließen" else "Kommentar"/, 'Random comment action should use a short label on narrow screens');
   assert.doesNotMatch(mainActivity, /\.padding\([^\n]*\(-\d+\)\.dp/, 'Compose padding must never receive negative values');
