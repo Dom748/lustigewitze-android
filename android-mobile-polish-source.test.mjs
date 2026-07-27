@@ -72,7 +72,8 @@ test('guest profile stays readable and compact in dark mode', () => {
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
   assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
-  assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header should adopt the more editorial iOS-style subtitle');
+  assert.match(mainActivity, /Community-Witze\. Direkt loslachen\./, 'Feed header subtitle should fit beside the badge without an ellipsis');
+  assert.doesNotMatch(mainActivity, /Die besten Witze der Community\./, 'The visibly truncated feed subtitle must not return');
   assert.doesNotMatch(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter should avoid duplicating the active sort state above the sort controls');
   assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
   assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size\)/, 'Random screen should show a dedicated deck/status card above the main joke card');

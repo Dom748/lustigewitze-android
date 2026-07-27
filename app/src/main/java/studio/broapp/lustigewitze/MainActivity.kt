@@ -627,7 +627,7 @@ private fun FeedScreen(
     ) {
         item {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
-                ScreenHeader(title = "Lustige Witze", subtitle = "Die besten Witze der Community.", badge = "Feed")
+                ScreenHeader(title = "Lustige Witze", subtitle = "Community-Witze. Direkt loslachen.", badge = "Feed")
             }
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
