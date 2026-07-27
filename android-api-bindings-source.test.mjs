@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android build stays newer than the previously shipped versionCode 9 APK", () => {
-  assert.match(appGradle, /versionCode = 10/);
-  assert.match(appGradle, /versionName = "0\.1\.9"/);
+test("android build stays newer than the previously shipped versionCode 10 APK", () => {
+  assert.match(appGradle, /versionCode = 11/);
+  assert.match(appGradle, /versionName = "0\.1\.10"/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
