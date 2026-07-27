@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android screenshot-fix build ships as versionCode 14", () => {
-  assert.match(appGradle, /versionCode = 14/);
-  assert.match(appGradle, /versionName = "0\.1\.13"/);
+test("android dark-mode contrast fix ships as versionCode 15", () => {
+  assert.match(appGradle, /versionCode = 15/);
+  assert.match(appGradle, /versionName = "0\.1\.14"/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {

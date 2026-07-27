@@ -46,6 +46,17 @@ test('android shell keeps theme and create actions fixed without covering screen
   assert.doesNotMatch(mainActivity, /floatingActionButton\s*=/, 'Global actions must not float over jokes or comment controls');
 });
 
+test('dark mode keeps ink text readable on light comic cards and inactive navigation visible', () => {
+  assert.match(mainActivity, /import androidx\.compose\.material3\.LocalContentColor/, 'Comic cards should be able to override Material dark-mode content colors');
+  assert.match(mainActivity, /import androidx\.compose\.runtime\.CompositionLocalProvider/, 'Comic cards should provide an explicit local ink color');
+  assert.match(mainActivity, /private fun ComicCard\([\s\S]*CompositionLocalProvider\(LocalContentColor provides Comic\.Ink\)/, 'Generic light comic cards must keep dark ink text in dark mode');
+  assert.match(mainActivity, /private fun ScreenHeader\([\s\S]*color = Comic\.Paper,[\s\S]*contentColor = Comic\.Ink/, 'Light screen headers must keep dark ink text in dark mode');
+  assert.match(mainActivity, /private fun LeaderboardHeaderCard\([\s\S]*color = Comic\.Paper,[\s\S]*contentColor = Comic\.Ink/, 'Leaderboard header must keep dark ink text in dark mode');
+  assert.match(mainActivity, /private fun LeaderboardUserRowCard\([\s\S]*color = if \(highlighted\) Comic\.YellowSoft else Comic\.Paper,[\s\S]*contentColor = Comic\.Ink/, 'Leaderboard rows must keep usernames and ranks readable in dark mode');
+  assert.match(mainActivity, /unselectedIconColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.78f\) else Comic\.Muted/, 'Inactive dark-mode navigation icons should use a light visible tint');
+  assert.match(mainActivity, /unselectedTextColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.78f\) else Comic\.Muted/, 'Inactive dark-mode navigation labels should use a light visible tint');
+});
+
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
   assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
   assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header should adopt the more editorial iOS-style subtitle');

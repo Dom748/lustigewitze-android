@@ -65,6 +65,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -79,6 +80,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -458,8 +460,8 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                                 selectedIconColor = Comic.Ink,
                                 selectedTextColor = Comic.Ink,
                                 indicatorColor = Comic.Yellow,
-                                unselectedIconColor = Comic.Muted,
-                                unselectedTextColor = Comic.Muted
+                                unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted,
+                                unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted
                             )
                         )
                     }
@@ -900,6 +902,7 @@ private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (Stri
 private fun LeaderboardHeaderCard(modifier: Modifier = Modifier) {
     Surface(
         color = Comic.Paper,
+        contentColor = Comic.Ink,
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = modifier.fillMaxWidth()
@@ -927,6 +930,7 @@ private fun LeaderboardFilterCard(
 ) {
     Surface(
         color = Comic.Paper,
+        contentColor = Comic.Ink,
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = modifier.fillMaxWidth()
@@ -989,6 +993,7 @@ private fun LeaderboardUserRowCard(
 ) {
     Surface(
         color = if (highlighted) Comic.YellowSoft else Comic.Paper,
+        contentColor = Comic.Ink,
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = Modifier.fillMaxWidth()
@@ -1894,6 +1899,7 @@ private fun JokeCard(
 private fun ScreenHeader(title: String, subtitle: String, badge: String) {
     Surface(
         color = Comic.Paper,
+        contentColor = Comic.Ink,
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(3.dp, Comic.Ink),
         modifier = Modifier.fillMaxWidth()
@@ -1939,15 +1945,17 @@ private fun ComicCard(
     contentPadding: Dp = 18.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Comic.Ink, RoundedCornerShape(24.dp))
-            .padding(3.dp)
-            .background(Comic.Paper, RoundedCornerShape(24.dp))
-            .padding(contentPadding),
-        content = content
-    )
+    CompositionLocalProvider(LocalContentColor provides Comic.Ink) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(Comic.Ink, RoundedCornerShape(24.dp))
+                .padding(3.dp)
+                .background(Comic.Paper, RoundedCornerShape(24.dp))
+                .padding(contentPadding),
+            content = content
+        )
+    }
 }
 
 @Composable
