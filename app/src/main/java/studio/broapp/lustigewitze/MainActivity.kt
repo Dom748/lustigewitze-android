@@ -431,16 +431,17 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         bottomBar = {
             Surface(
                 color = if (darkMode) Comic.DarkPaper else Comic.Cream,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                border = BorderStroke(3.dp, Comic.Ink),
-                shadowElevation = 16.dp,
+                shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+                border = BorderStroke(2.dp, Comic.Ink),
+                shadowElevation = 10.dp,
                 modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
                 NavigationBar(
                     containerColor = Color.Transparent,
-                    tonalElevation = 0.dp
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.height(68.dp)
                 ) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
@@ -621,7 +622,7 @@ private fun FeedScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 18.dp, top = 18.dp, end = 18.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -634,7 +635,7 @@ private fun FeedScreen(
             feedError?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
-            ComicCard(modifier = Modifier.padding(top = 10.dp), contentPadding = 14.dp) {
+            ComicCard(modifier = Modifier.padding(top = 8.dp), contentPadding = 10.dp) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
                     Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
@@ -645,12 +646,12 @@ private fun FeedScreen(
                     color = Comic.Muted,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 6.dp)
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .padding(top = 2.dp)
                         .horizontalScroll(rememberScrollState())
                 ) {
                     feedCategoryOptions.forEach { option ->
@@ -742,7 +743,7 @@ private fun RandomScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(top = 6.dp, bottom = 24.dp),
+                .padding(top = 6.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
@@ -1914,19 +1915,19 @@ private fun ScreenHeader(title: String, subtitle: String, badge: String) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
-                .padding(4.dp)
-                .border(BorderStroke(2.dp, Comic.Ink.copy(alpha = 0.5f)), RoundedCornerShape(20.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(3.dp)
+                .border(BorderStroke(1.5.dp, Comic.Ink.copy(alpha = 0.42f)), RoundedCornerShape(20.dp))
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.Top) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.weight(1f)) {
                     Text(
                         title,
-                        fontSize = 28.sp,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
-                        lineHeight = 32.sp,
+                        lineHeight = 29.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1934,7 +1935,7 @@ private fun ScreenHeader(title: String, subtitle: String, badge: String) {
                         subtitle,
                         color = Comic.Muted,
                         fontWeight = FontWeight.SemiBold,
-                        lineHeight = 21.sp,
+                        lineHeight = 19.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -2002,7 +2003,7 @@ private fun CompactSegment(title: String, selected: Boolean, onClick: () -> Unit
             fontWeight = FontWeight.Black,
             fontSize = 12.sp,
             maxLines = 1,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         )
     }
 }

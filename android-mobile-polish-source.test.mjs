@@ -28,7 +28,7 @@ test('android feed styling keeps narrow filters compact and visibly scrollable',
   assert.match(mainActivity, /horizontalScroll\(rememberScrollState\(\)\)/, 'Feed filters should scroll horizontally instead of wrapping into cramped rows');
   assert.match(mainActivity, /Brush\.verticalGradient/, 'Android shell should use a stronger stitched gradient background');
   assert.match(mainActivity, /RoundedCornerShape\(24\.dp\)/, 'Core comic cards should use softer stitched corners');
-  assert.match(mainActivity, /ComicCard\(modifier = Modifier\.padding\(top = 10\.dp\), contentPadding = 14\.dp\)/, 'Feed filter card should use compact internal padding');
+  assert.match(mainActivity, /ComicCard\(modifier = Modifier\.padding\(top = 8\.dp\), contentPadding = 10\.dp\)/, 'Feed filter card should use compact internal padding');
   assert.match(mainActivity, /Text\(\s*"Kategorien ↔"/, 'Category row should visibly communicate horizontal scrolling');
   assert.match(mainActivity, /private fun CompactSegment\(/, 'Category filters should use a narrow-screen chip component');
   assert.match(mainActivity, /CompactSegment\(option\.label, selected = selectedCategory == option\.apiValue\)/, 'Feed categories should use compact chips so the first options fit without clipping');
@@ -37,7 +37,8 @@ test('android feed styling keeps narrow filters compact and visibly scrollable',
 });
 
 test('android shell removes the LW banner and relocates create and theme actions without overlays', () => {
-  assert.match(mainActivity, /Surface\(\s*color = if \(darkMode\) Comic\.DarkPaper else Comic\.Cream,[\s\S]*shape = RoundedCornerShape\(topStart = 28\.dp, topEnd = 28\.dp\),[\s\S]*border = BorderStroke\(3\.dp, Comic\.Ink\)/, 'Bottom navigation should sit inside a stitched shell');
+  assert.match(mainActivity, /Surface\(\s*color = if \(darkMode\) Comic\.DarkPaper else Comic\.Cream,[\s\S]*shape = RoundedCornerShape\(topStart = 22\.dp, topEnd = 22\.dp\),[\s\S]*border = BorderStroke\(2\.dp, Comic\.Ink\)[\s\S]*\.padding\(horizontal = 12\.dp, vertical = 6\.dp\)/, 'Bottom navigation should use a flatter stitched shell');
+  assert.match(mainActivity, /NavigationBar\([\s\S]*modifier = Modifier\.height\(68\.dp\)/, 'Bottom navigation should stay compact instead of using the tall Material default');
   assert.match(mainActivity, /NavigationBarItemDefaults\.colors\(/, 'Bottom navigation items should define comic selected/unselected colors');
   assert.doesNotMatch(mainActivity, /topBar = \{/, 'The scaffold must no longer reserve space for an LW utility banner');
   assert.doesNotMatch(mainActivity, /private fun CompactUtilityBar\(/, 'The old LW banner must be removed completely');
@@ -65,7 +66,7 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
   assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
   assert.match(mainActivity, /verticalScroll\(rememberScrollState\(\)\)/, 'Random screen should allow vertical scrolling when the active joke and comments exceed the viewport height');
-  assert.match(mainActivity, /\.padding\(horizontal = 20\.dp\)[\s\S]*\.padding\(top = 6\.dp, bottom = 24\.dp\)/, 'Random content should reserve safe horizontal room and bottom clearance above navigation');
+  assert.match(mainActivity, /\.padding\(horizontal = 20\.dp\)[\s\S]*\.padding\(top = 6\.dp, bottom = 40\.dp\)/, 'Random content should reserve safe horizontal room and bottom clearance above navigation');
   assert.match(mainActivity, /\.rotate\(dragX \/ 80f\)/, 'Random swipe rotation should stay subtle enough to avoid edge clipping');
   assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
   assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
@@ -98,7 +99,8 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Text\("Profil-Stats", fontWeight = FontWeight\.Black, fontSize = 20\.sp\)/, 'Profile should group key stats into a calmer stats card under the hero');
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
-  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 28\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
+  assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*\.padding\(horizontal = 14\.dp, vertical = 8\.dp\)[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 26\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
+  assert.match(mainActivity, /contentPadding = androidx\.compose\.foundation\.layout\.PaddingValues\(start = 18\.dp, top = 18\.dp, end = 18\.dp, bottom = 40\.dp\)/, 'Feed should keep extra scroll clearance above the fixed navigation');
   assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/, 'Screen heroes should keep a compact visible gap below the system status area');
   assert.doesNotMatch(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The removed utility banner must not leave an LW brand pill behind');
   assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The removed utility banner must not duplicate the Lustige Witze screen title');

@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android top-banner removal ships as versionCode 16", () => {
-  assert.match(appGradle, /versionCode = 16/);
-  assert.match(appGradle, /versionName = "0\.1\.15"/);
+test("android compact feed polish ships as versionCode 17", () => {
+  assert.match(appGradle, /versionCode = 17/);
+  assert.match(appGradle, /versionName = "0\.1\.16"/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
