@@ -7,6 +7,12 @@ const root = process.cwd();
 const mainActivity = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/MainActivity.kt"), "utf8");
 const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/MobileApi.kt"), "utf8");
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
+const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
+
+test("android build stays newer than the previously shipped versionCode 9 APK", () => {
+  assert.match(appGradle, /versionCode = 10/);
+  assert.match(appGradle, /versionName = "0\.1\.9"/);
+});
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
   assert.match(apiClient, /private const val MOBILE_API_BASE_URL = "https:\/\/api\.lustigewitze\.fun"/);
