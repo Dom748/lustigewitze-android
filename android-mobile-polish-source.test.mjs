@@ -64,7 +64,9 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header should adopt the more editorial iOS-style subtitle');
   assert.doesNotMatch(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter should avoid duplicating the active sort state above the sort controls');
   assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
-  assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
+  assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
+  assert.doesNotMatch(mainActivity, /private fun RandomQueueCard\([^)]*undoAvailable/, 'Deck status must not expose a second undo action');
+  assert.doesNotMatch(mainActivity, /Pill\(if \(undoAvailable\) "Undo"/, 'Undo must only appear in the dedicated button beneath the joke card');
   assert.match(mainActivity, /verticalScroll\(rememberScrollState\(\)\)/, 'Random screen should allow vertical scrolling when the active joke and comments exceed the viewport height');
   assert.match(mainActivity, /\.padding\(horizontal = 20\.dp\)[\s\S]*\.padding\(top = 6\.dp, bottom = 40\.dp\)/, 'Random content should reserve safe horizontal room and bottom clearance above navigation');
   assert.match(mainActivity, /\.rotate\(dragX \/ 80f\)/, 'Random swipe rotation should stay subtle enough to avoid edge clipping');

@@ -753,7 +753,7 @@ private fun RandomScreen(
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
 
-            RandomQueueCard(currentIndex = currentIndex, total = jokes.size, undoAvailable = undoStack.isNotEmpty())
+            RandomQueueCard(currentIndex = currentIndex, total = jokes.size)
 
             Box(
                 modifier = Modifier
@@ -2038,7 +2038,7 @@ private fun ProfileStatCard(title: String, value: String, accent: Color, modifie
 }
 
 @Composable
-private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolean) {
+private fun RandomQueueCard(currentIndex: Int, total: Int) {
     Surface(
         color = Comic.Cream,
         shape = RoundedCornerShape(18.dp),
@@ -2052,8 +2052,6 @@ private fun RandomQueueCard(currentIndex: Int, total: Int, undoAvailable: Boolea
         ) {
             Pill("Deck", Comic.YellowSoft)
             Pill("${(currentIndex % total) + 1} / $total", Comic.BlueSoft)
-            Spacer(Modifier.weight(1f))
-            Pill(if (undoAvailable) "Undo" else "Swipe", if (undoAvailable) Comic.Pink else Comic.Yellow)
         }
     }
 }
