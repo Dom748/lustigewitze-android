@@ -44,7 +44,7 @@ test('android shell removes the LW banner and relocates create and theme actions
   assert.doesNotMatch(mainActivity, /private fun CompactUtilityBar\(/, 'The old LW banner must be removed completely');
   assert.match(mainActivity, /if \(tab == Tab\.Random\) \{[\s\S]*selected = false,[\s\S]*onClick = \{ showComposer = true \},[\s\S]*Text\("Neu"[\s\S]*unselectedIconColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.92f\) else Comic\.Ink/, 'Create should be a fixed, dark-mode-readable action after Random in the bottom navigation');
   assert.match(mainActivity, /private fun ProfileScreen\([\s\S]*darkMode: Boolean,[\s\S]*onToggleTheme: \(\) -> Unit/, 'Profile must receive the current theme and toggle action');
-  assert.match(mainActivity, /private fun ThemeSettingsCard\([\s\S]*Text\("Darstellung"[\s\S]*contentDescription = "Theme wechseln"/, 'Theme switching should move into a compact profile card');
+  assert.match(mainActivity, /private fun ThemeSettingsCard\([\s\S]*Text\("Darstellung"[\s\S]*contentDescription = if \(darkMode\)/, 'Theme switching should move into a compact profile card with an explicit action label');
   assert.doesNotMatch(mainActivity, /floatingActionButton\s*=/, 'Global actions must not float over jokes or comment controls');
 });
 
@@ -57,6 +57,17 @@ test('dark mode keeps ink text readable on light comic cards and inactive naviga
   assert.match(mainActivity, /private fun LeaderboardUserRowCard\([\s\S]*color = if \(highlighted\) Comic\.YellowSoft else Comic\.Paper,[\s\S]*contentColor = Comic\.Ink/, 'Leaderboard rows must keep usernames and ranks readable in dark mode');
   assert.match(mainActivity, /unselectedIconColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.78f\) else Comic\.Muted/, 'Inactive dark-mode navigation icons should use a light visible tint');
   assert.match(mainActivity, /unselectedTextColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.78f\) else Comic\.Muted/, 'Inactive dark-mode navigation labels should use a light visible tint');
+});
+
+test('guest profile stays readable and compact in dark mode', () => {
+  assert.match(mainActivity, /selectedTextColor = if \(darkMode\) Comic\.Yellow else Comic\.Ink/, 'Selected navigation labels need a bright dark-mode color');
+  assert.match(mainActivity, /Feed bleibt ohne Login offen\. Dein Profil startet nach dem Einloggen\./, 'Guest profile subtitle should fit without ellipsis');
+  assert.doesNotMatch(mainActivity, /Ohne Login bleibt dein Feed offen, aber dein Account-Bereich startet erst nach dem Einloggen\./, 'Overlong guest subtitle must not return');
+  assert.match(mainActivity, /PrimaryButton\("Anmelden \/ Registrieren"/, 'Guest CTA should use consistent German wording');
+  assert.doesNotMatch(mainActivity, /PrimaryButton\("Login \/ Register"/, 'Denglish guest CTA must not return');
+  assert.match(mainActivity, /if \(darkMode\) "Dark Mode aktiv · Wechsel zu Light" else "Light Mode aktiv · Wechsel zu Dark"/, 'Theme card should explain the icon action');
+  assert.match(mainActivity, /contentDescription = if \(darkMode\) "Zum Light Mode wechseln" else "Zum Dark Mode wechseln"/, 'Theme icon needs an explicit dynamic accessibility action');
+  assert.match(mainActivity, /Spacer\(Modifier\.weight\(1f\)\)\s*PrimaryButton\("Anmelden \/ Registrieren"/, 'Guest CTA should absorb leftover height above itself instead of leaving dead space below');
 });
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {

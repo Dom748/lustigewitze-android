@@ -451,7 +451,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                             label = { Text(tab.label, fontWeight = FontWeight.Black) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Comic.Ink,
-                                selectedTextColor = Comic.Ink,
+                                selectedTextColor = if (darkMode) Comic.Yellow else Comic.Ink,
                                 indicatorColor = Comic.Yellow,
                                 unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted,
                                 unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted
@@ -1139,7 +1139,7 @@ private fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (username == null) {
-            ScreenHeader(title = "Profil", subtitle = "Ohne Login bleibt dein Feed offen, aber dein Account-Bereich startet erst nach dem Einloggen.", badge = "Gast")
+            ScreenHeader(title = "Profil", subtitle = "Feed bleibt ohne Login offen. Dein Profil startet nach dem Einloggen.", badge = "Gast")
             ThemeSettingsCard(darkMode = darkMode, onToggleTheme = onToggleTheme)
             ComicCard {
                 Text("Gastkonto aktiv", fontWeight = FontWeight.Black, fontSize = 22.sp)
@@ -1153,7 +1153,8 @@ private fun ProfileScreen(
                 Text("Warum einloggen?", fontWeight = FontWeight.Black)
                 Text("- Profil und Stats sehen\n- Favoriten accountgebunden speichern\n- Konto später direkt wieder löschen", color = Comic.Muted, modifier = Modifier.padding(top = 8.dp))
             }
-            PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
+            Spacer(Modifier.weight(1f))
+            PrimaryButton("Anmelden / Registrieren", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
             return@Column
         }
 
@@ -1307,7 +1308,7 @@ private fun ProfileScreen(
                 onOpen = { showBlockedUsers = true }
             )
         } else {
-            PrimaryButton("Login / Register", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
+            PrimaryButton("Anmelden / Registrieren", Icons.AutoMirrored.Filled.Login, onClick = onAuthRequired)
         }
     }
 }
@@ -1680,7 +1681,7 @@ private fun ThemeSettingsCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text("Darstellung", fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text(
-                    if (darkMode) "Dark Mode aktiv" else "Light Mode aktiv",
+                    if (darkMode) "Dark Mode aktiv · Wechsel zu Light" else "Light Mode aktiv · Wechsel zu Dark",
                     color = Comic.Muted,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 3.dp)
@@ -1690,7 +1691,7 @@ private fun ThemeSettingsCard(
                 onClick = onToggleTheme,
                 containerColor = if (darkMode) Comic.Blue else Comic.YellowSoft,
                 icon = if (darkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                contentDescription = "Theme wechseln"
+                contentDescription = if (darkMode) "Zum Light Mode wechseln" else "Zum Dark Mode wechseln"
             )
         }
     }
