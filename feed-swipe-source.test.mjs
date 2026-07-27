@@ -31,7 +31,8 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Lustige Witze"/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Zufallswitz"/);
-  assert.match(mainActivity, /statusBarsPadding\(\)/);
+  assert.match(mainActivity, /Scaffold\(\s*containerColor = MaterialTheme\.colorScheme\.background,\s*bottomBar =/, 'Scaffold should own safe system insets once the top banner is removed');
+  assert.doesNotMatch(mainActivity, /statusBarsPadding\(\)/, 'The removed banner must not leave manual status-bar padding behind');
   assert.match(mainActivity, /SwipeVoteBadge/);
   assert.match(mainActivity, /label = "TOP"/);
   assert.match(mainActivity, /Icons\.Filled\.ThumbUp/);

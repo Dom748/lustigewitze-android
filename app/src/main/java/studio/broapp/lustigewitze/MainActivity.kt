@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -429,13 +428,6 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            CompactUtilityBar(
-                darkMode = darkMode,
-                onToggleTheme = onToggleTheme,
-                onCreateJoke = { showComposer = true }
-            )
-        },
         bottomBar = {
             Surface(
                 color = if (darkMode) Comic.DarkPaper else Comic.Cream,
@@ -464,6 +456,21 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                                 unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted
                             )
                         )
+                        if (tab == Tab.Random) {
+                            NavigationBarItem(
+                                selected = false,
+                                onClick = { showComposer = true },
+                                icon = { Icon(Icons.Filled.Add, contentDescription = "Neuen Witz erstellen") },
+                                label = { Text("Neu", fontWeight = FontWeight.Black) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Comic.Ink,
+                                    selectedTextColor = Comic.Ink,
+                                    indicatorColor = Comic.Yellow,
+                                    unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.92f) else Comic.Ink,
+                                    unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.92f) else Comic.Ink
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -509,6 +516,8 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     isOwnProfile = sessionStore.currentUser != null,
                     accountDeleted = accountDeleted,
                     sessionStore = sessionStore,
+                    darkMode = darkMode,
+                    onToggleTheme = onToggleTheme,
                     onAuthRequired = { showAuth = true },
                     onUnblockAuthor = { authorId, authorUsername ->
                         blockedAuthors = blockedAuthors.filterNot { it == authorId || it == authorUsername }
@@ -552,6 +561,8 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                 isOwnProfile = username == sessionStore.currentUser?.username,
                 accountDeleted = accountDeleted,
                 sessionStore = sessionStore,
+                darkMode = darkMode,
+                onToggleTheme = onToggleTheme,
                 onAuthRequired = { showAuth = true },
                 onUnblockAuthor = { authorId, authorUsername ->
                     blockedAuthors = blockedAuthors.filterNot { it == authorId || it == authorUsername }
@@ -1068,6 +1079,8 @@ private fun ProfileScreen(
     isOwnProfile: Boolean,
     accountDeleted: Boolean,
     sessionStore: SessionStore,
+    darkMode: Boolean,
+    onToggleTheme: () -> Unit,
     onAuthRequired: () -> Unit,
     onUnblockAuthor: (String, String) -> Unit,
     onDeleteAccount: () -> Unit
@@ -1126,6 +1139,7 @@ private fun ProfileScreen(
     ) {
         if (username == null) {
             ScreenHeader(title = "Profil", subtitle = "Ohne Login bleibt dein Feed offen, aber dein Account-Bereich startet erst nach dem Einloggen.", badge = "Gast")
+            ThemeSettingsCard(darkMode = darkMode, onToggleTheme = onToggleTheme)
             ComicCard {
                 Text("Gastkonto aktiv", fontWeight = FontWeight.Black, fontSize = 22.sp)
                 Text(
@@ -1168,6 +1182,9 @@ private fun ProfileScreen(
             return@Column
         }
         ScreenHeader(title = "Profil", subtitle = resolvedProfile.headline, badge = if (isOwnProfile) "Account" else "Creator")
+        if (isOwnProfile) {
+            ThemeSettingsCard(darkMode = darkMode, onToggleTheme = onToggleTheme)
+        }
         ProfileHeroCard(resolvedProfile = resolvedProfile, isOwnProfile = isOwnProfile)
         ComicCard {
             Text("Profil-Stats", fontWeight = FontWeight.Black, fontSize = 20.sp)
@@ -1650,37 +1667,29 @@ private fun ComposerSheet(sessionStore: SessionStore, onDone: () -> Unit, onAuth
 }
 
 @Composable
-private fun CompactUtilityBar(
+private fun ThemeSettingsCard(
     darkMode: Boolean,
-    onToggleTheme: () -> Unit,
-    onCreateJoke: () -> Unit
+    onToggleTheme: () -> Unit
 ) {
-    Surface(
-        color = if (darkMode) Comic.DarkPaper else Comic.Cream,
-        shadowElevation = 4.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    ComicCard(contentPadding = 14.dp) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                Pill("LW", Comic.Yellow)
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Darstellung", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text(
+                    if (darkMode) "Dark Mode aktiv" else "Light Mode aktiv",
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 3.dp)
+                )
             }
             UtilityIconButton(
                 onClick = onToggleTheme,
-                containerColor = if (darkMode) Comic.Blue else Comic.Paper,
+                containerColor = if (darkMode) Comic.Blue else Comic.YellowSoft,
                 icon = if (darkMode) Icons.Filled.LightMode else Icons.Filled.DarkMode,
                 contentDescription = "Theme wechseln"
-            )
-            UtilityIconButton(
-                onClick = onCreateJoke,
-                containerColor = Comic.Yellow,
-                icon = Icons.Filled.Add,
-                contentDescription = "Neuen Witz erstellen"
             )
         }
     }

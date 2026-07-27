@@ -36,13 +36,14 @@ test('android feed styling keeps narrow filters compact and visibly scrollable',
   assert.doesNotMatch(mainActivity, /Kategorien laufen jetzt horizontal, damit der Feed frei scrollt und das Stitch-Layout sauber bleibt\./, 'Feed filter card should drop the long helper paragraph in favor of a tighter stitched layout');
 });
 
-test('android shell keeps theme and create actions fixed without covering screen content', () => {
+test('android shell removes the LW banner and relocates create and theme actions without overlays', () => {
   assert.match(mainActivity, /Surface\(\s*color = if \(darkMode\) Comic\.DarkPaper else Comic\.Cream,[\s\S]*shape = RoundedCornerShape\(topStart = 28\.dp, topEnd = 28\.dp\),[\s\S]*border = BorderStroke\(3\.dp, Comic\.Ink\)/, 'Bottom navigation should sit inside a stitched shell');
   assert.match(mainActivity, /NavigationBarItemDefaults\.colors\(/, 'Bottom navigation items should define comic selected/unselected colors');
-  assert.match(mainActivity, /topBar = \{[\s\S]*CompactUtilityBar\(/, 'Theme and create actions should live in the measured scaffold top bar');
-  assert.match(mainActivity, /private fun CompactUtilityBar\(/, 'App shell should expose a compact non-overlapping utility bar');
-  assert.match(mainActivity, /private fun UtilityIconButton\(/, 'Utility actions should share a compact icon button helper');
-  assert.match(mainActivity, /modifier = Modifier\.size\(44\.dp\)/, 'Utility actions should retain accessible 44dp tap targets');
+  assert.doesNotMatch(mainActivity, /topBar = \{/, 'The scaffold must no longer reserve space for an LW utility banner');
+  assert.doesNotMatch(mainActivity, /private fun CompactUtilityBar\(/, 'The old LW banner must be removed completely');
+  assert.match(mainActivity, /if \(tab == Tab\.Random\) \{[\s\S]*selected = false,[\s\S]*onClick = \{ showComposer = true \},[\s\S]*Text\("Neu"[\s\S]*unselectedIconColor = if \(darkMode\) Comic\.Cream\.copy\(alpha = 0\.92f\) else Comic\.Ink/, 'Create should be a fixed, dark-mode-readable action after Random in the bottom navigation');
+  assert.match(mainActivity, /private fun ProfileScreen\([\s\S]*darkMode: Boolean,[\s\S]*onToggleTheme: \(\) -> Unit/, 'Profile must receive the current theme and toggle action');
+  assert.match(mainActivity, /private fun ThemeSettingsCard\([\s\S]*Text\("Darstellung"[\s\S]*contentDescription = "Theme wechseln"/, 'Theme switching should move into a compact profile card');
   assert.doesNotMatch(mainActivity, /floatingActionButton\s*=/, 'Global actions must not float over jokes or comment controls');
 });
 
@@ -98,9 +99,9 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 28\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
-  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/, 'Screen heroes should keep a compact visible gap below the fixed utility bar');
-  assert.match(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The utility bar should use a compact brand mark instead of duplicating the full screen title');
-  assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The utility bar should not duplicate the Lustige Witze screen title');
+  assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/, 'Screen heroes should keep a compact visible gap below the system status area');
+  assert.doesNotMatch(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The removed utility banner must not leave an LW brand pill behind');
+  assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The removed utility banner must not duplicate the Lustige Witze screen title');
   assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/, 'All four joke actions should share the available card width without a wrapped bookmark label');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
   assert.match(mainActivity, /ComicCard\([\s\S]*Row\(verticalAlignment = Alignment\.CenterVertically\) \{[\s\S]*Pill\(joke\.category, Comic\.Yellow\)[\s\S]*Spacer\(Modifier\.weight\(1f\)\)[\s\S]*ScoreBadge\(score = joke\.score\)/, 'Score badges should live inside the joke-card header row');
