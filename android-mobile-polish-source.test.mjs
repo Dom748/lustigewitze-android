@@ -28,25 +28,29 @@ test('android feed styling uses a more stitched sheet and horizontal category sc
   assert.match(mainActivity, /horizontalScroll\(rememberScrollState\(\)\)/, 'Feed filters should scroll horizontally instead of wrapping into cramped rows');
   assert.match(mainActivity, /Brush\.verticalGradient/, 'Android shell should use a stronger stitched gradient background');
   assert.match(mainActivity, /RoundedCornerShape\(24\.dp\)/, 'Core comic cards should use softer stitched corners');
-  assert.match(mainActivity, /Pill\("Feed Filter", Comic\.Yellow\)/, 'Feed filter card should lead with a stitched filter badge instead of a plain text block');
+  assert.match(mainActivity, /Pill\("Filter", Comic\.Yellow\)/, 'Feed filter card should lead with a compact filter badge');
   assert.doesNotMatch(mainActivity, /Kategorien laufen jetzt horizontal, damit der Feed frei scrollt und das Stitch-Layout sauber bleibt\./, 'Feed filter card should drop the long helper paragraph in favor of a tighter stitched layout');
 });
 
-test('android shell uses stitched bottom navigation and comic floating actions', () => {
+test('android shell keeps theme and create actions fixed without covering screen content', () => {
   assert.match(mainActivity, /Surface\(\s*color = if \(darkMode\) Comic\.DarkPaper else Comic\.Cream,[\s\S]*shape = RoundedCornerShape\(topStart = 28\.dp, topEnd = 28\.dp\),[\s\S]*border = BorderStroke\(3\.dp, Comic\.Ink\)/, 'Bottom navigation should sit inside a stitched shell');
   assert.match(mainActivity, /NavigationBarItemDefaults\.colors\(/, 'Bottom navigation items should define comic selected/unselected colors');
-  assert.match(mainActivity, /private fun FloatingComicButton\(/, 'App shell should use a custom comic floating action button helper');
-  assert.match(mainActivity, /shape = RoundedCornerShape\(18\.dp\)/, 'Comic floating action buttons should use rounded-rectangle corners instead of default circles');
-  assert.match(mainActivity, /modifier = Modifier\.size\(58\.dp\)/, 'Comic floating action buttons should use a larger tap target inside the stitched shell');
+  assert.match(mainActivity, /topBar = \{[\s\S]*CompactUtilityBar\(/, 'Theme and create actions should live in the measured scaffold top bar');
+  assert.match(mainActivity, /private fun CompactUtilityBar\(/, 'App shell should expose a compact non-overlapping utility bar');
+  assert.match(mainActivity, /private fun UtilityIconButton\(/, 'Utility actions should share a compact icon button helper');
+  assert.match(mainActivity, /modifier = Modifier\.size\(44\.dp\)/, 'Utility actions should retain accessible 44dp tap targets');
+  assert.doesNotMatch(mainActivity, /floatingActionButton\s*=/, 'Global actions must not float over jokes or comment controls');
 });
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
   assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should upgrade body typography for a more premium stitched reading rhythm');
   assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header should adopt the more editorial iOS-style subtitle');
-  assert.match(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter card should surface the active sort state in an editorial badge');
-  assert.match(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter card should explain the tighter iOS-like structure');
+  assert.doesNotMatch(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter should avoid duplicating the active sort state above the sort controls');
+  assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
   assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size, undoAvailable = undoStack\.isNotEmpty\(\)\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
   assert.match(mainActivity, /verticalScroll\(rememberScrollState\(\)\)/, 'Random screen should allow vertical scrolling when the active joke and comments exceed the viewport height');
+  assert.match(mainActivity, /\.padding\(horizontal = 20\.dp, vertical = 14\.dp\)/, 'Random content should reserve safe horizontal room for card movement');
+  assert.match(mainActivity, /\.rotate\(dragX \/ 80f\)/, 'Random swipe rotation should stay subtle enough to avoid edge clipping');
   assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
   assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
   assert.match(mainActivity, /Pill\("\$favoriteCount Merker", Comic\.BlueSoft\)/, 'Joke cards should surface save count in the new meta strip');
@@ -79,9 +83,11 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should keep badge top-aligned and allow two-line titles/subtitles');
-  assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.width\(72\.dp\),[\s\S]*compactHorizontalPadding = 3\.dp,[\s\S]*compactVerticalPadding = 2\.dp/, 'Android compact vote buttons should stay visibly broader than the default action tile');
+  assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/, 'All four joke actions should share the available card width without a wrapped bookmark label');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(18\.dp\)/, 'Score badges should use a rounded stitched badge instead of a plain circle');
-  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.offset\(x = 8\.dp, y = \(-6\)\.dp\)/, 'Feed cards should float the score badge with offset instead of invalid negative padding');
+  assert.match(mainActivity, /ScoreBadge\([\s\S]*score = joke\.score,[\s\S]*\.align\(Alignment\.TopEnd\)[\s\S]*\.offset\(x = 0\.dp, y = \(-6\)\.dp\)/, 'Score badges should overlap vertically without protruding beyond the right screen edge');
+  assert.match(mainActivity, /Pill\("Kommentare \(\$\{comments\.size\}\)", Comic\.BlueSoft\)/, 'Random comments should use one compact count label');
+  assert.match(mainActivity, /if \(showComposer\) "Schließen" else "Kommentar"/, 'Random comment action should use a short label on narrow screens');
   assert.doesNotMatch(mainActivity, /\.padding\([^\n]*\(-\d+\)\.dp/, 'Compose padding must never receive negative values');
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });
