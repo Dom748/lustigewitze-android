@@ -509,6 +509,7 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     onAuthRequired = { showAuth = true }
                 )
                 Tab.Leaderboard -> LeaderboardScreen(
+                    sessionStore = sessionStore,
                     blockedAuthors = blockedAuthors,
                     onOpenProfile = { selectedProfileUsername = it }
                 )
@@ -868,18 +869,21 @@ private fun DetailScreen(
 }
 
 @Composable
-private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (String) -> Unit) {
-    data class LeaderboardEntry(val username: String, val jokeCount: Int, val score: Int)
-
+private fun LeaderboardScreen(sessionStore: SessionStore, blockedAuthors: List<String>, onOpenProfile: (String) -> Unit) {
     var selectedMode by rememberSaveable { mutableStateOf("User") }
     var selectedPeriod by rememberSaveable { mutableStateOf("Alle") }
-    val rows = listOf(
-        LeaderboardEntry("WitzKiosk", 103, 462),
-        LeaderboardEntry("FlachwitzFritz", 10, 72),
-        LeaderboardEntry("bro_spicy_310794", 12, 71),
-        LeaderboardEntry("PiratPiet", 11, 61),
-        LeaderboardEntry("WortspielWilli", 10, 56)
-    ).filterNot { blockedAuthors.contains(it.username) }
+
+    LaunchedEffect(selectedMode, selectedPeriod) {
+        sessionStore.loadLeaderboard(
+            scope = if (selectedMode == "Witze") "jokes" else "users",
+            period = when (selectedPeriod) {
+                "Heute" -> "today"
+                "Woche" -> "week"
+                "Monat" -> "month"
+                else -> "all"
+            }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -896,16 +900,31 @@ private fun LeaderboardScreen(blockedAuthors: List<String>, onOpenProfile: (Stri
                 modifier = Modifier.padding(top = 10.dp)
             )
         }
-        items(rows.withIndex().toList()) { indexed ->
-            val rank = indexed.index + 1
-            LeaderboardUserRowCard(
-                rank = rank,
-                username = indexed.value.username,
-                jokeCount = indexed.value.jokeCount,
-                score = indexed.value.score,
-                highlighted = rank == 1,
-                onOpenProfile = { onOpenProfile(indexed.value.username) }
-            )
+        if (sessionStore.isLoadingLeaderboard) {
+            item { StatusPanel("Rangliste lädt", "Die aktuellen Ergebnisse werden geladen.") }
+        } else if (sessionStore.leaderboardError != null) {
+            item { StatusPanel("Rangliste nicht verfügbar", sessionStore.leaderboardError ?: "Unbekannter Fehler") }
+        } else if (selectedMode == "Witze") {
+            items(sessionStore.leaderboardJokes.withIndex().toList()) { indexed ->
+                LeaderboardJokeRowCard(
+                    rank = indexed.index + 1,
+                    joke = indexed.value,
+                    onOpenProfile = onOpenProfile
+                )
+            }
+        } else {
+            val rows = sessionStore.leaderboardUsers.filterNot { blockedAuthors.contains(it.username) }
+            items(rows.withIndex().toList()) { indexed ->
+                val rank = indexed.index + 1
+                LeaderboardUserRowCard(
+                    rank = rank,
+                    username = indexed.value.username,
+                    jokeCount = indexed.value.jokeCount,
+                    score = indexed.value.score,
+                    highlighted = rank == 1,
+                    onOpenProfile = { onOpenProfile(indexed.value.username) }
+                )
+            }
         }
     }
 }
@@ -1052,6 +1071,45 @@ private fun LeaderboardUserRowCard(
                 Spacer(Modifier.width(12.dp))
                 LeaderboardScoreBadge(score)
             }
+        }
+    }
+}
+
+@Composable
+private fun LeaderboardJokeRowCard(rank: Int, joke: MobileJoke, onOpenProfile: (String) -> Unit) {
+    val username = joke.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"
+    Surface(
+        color = if (rank == 1) Comic.YellowSoft else Comic.Paper,
+        contentColor = Comic.Ink,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(3.dp, Comic.Ink),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
+        ) {
+            Pill("#$rank", if (rank == 1) Comic.Yellow else Color.White)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Pill(joke.category, Comic.Yellow)
+                Text(
+                    joke.content,
+                    color = Comic.Ink,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 17.sp,
+                    lineHeight = 22.sp,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "von @$username",
+                    color = Comic.Muted,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onOpenProfile(username) }
+                )
+            }
+            LeaderboardScoreBadge(joke.score)
         }
     }
 }

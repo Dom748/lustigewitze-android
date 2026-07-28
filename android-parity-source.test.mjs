@@ -35,8 +35,20 @@ test("android auth sheet gates login registration and guest access behind terms 
   assert.equal(source.includes("sessionStore.ensureGuestSession()"), true, "Guest CTA should trigger the shared Android guest session bootstrap");
   assert.equal(source.includes("enabled = acceptedTerms && confirmedAdult"), true, "Auth submit should stay disabled until terms and legal-age confirmation are accepted");
   assert.equal(sessionStore.includes("suspend fun ensureGuestSession()"), true, "SessionStore should expose a guest-session helper");
+  assert.equal(sessionStore.includes("if (currentUser != null) return"), true, "A stale token without a loaded user must not swallow the guest CTA");
+  assert.equal(sessionStore.includes("currentUser != null || !accessToken.isNullOrBlank()"), false, "Guest bootstrap must replace a stale token instead of returning silently");
   assert.equal(mobileApi.includes("suspend fun createGuestSession()"), true, "Mobile API client should be able to bootstrap a guest session");
   assert.equal(mobileApi.includes("@guest.lustigewitze.fun"), true, "Guest session bootstrap should use the backend guest email convention");
+});
+
+test("android leaderboard switches between live user and joke results", () => {
+  assert.equal(mobileApi.includes("suspend fun getLeaderboard(scope: String, period: String"), true, "Mobile API should load the selected leaderboard scope and period");
+  assert.equal(mobileApi.includes("/api/mobile/leaderboard?type=$encodedScope&period=$encodedPeriod"), true, "Leaderboard should use the live mobile endpoint");
+  assert.equal(sessionStore.includes("suspend fun loadLeaderboard(scope: String, period: String)"), true, "SessionStore should own live leaderboard state");
+  assert.match(source, /LaunchedEffect\(selectedMode, selectedPeriod\)[\s\S]*sessionStore\.loadLeaderboard\(/);
+  assert.match(source, /if \(selectedMode == "Witze"\)[\s\S]*LeaderboardJokeRowCard\(/);
+  assert.match(source, /else \{[\s\S]*LeaderboardUserRowCard\(/);
+  assert.equal(source.includes("LeaderboardEntry(\"WitzKiosk\""), false, "The leaderboard must not render the hard-coded demo users");
 });
 
 test("android profile screen exposes real profile stats and direct account deletion", () => {

@@ -34,6 +34,14 @@ class SessionStore(
         private set
     var feedError by mutableStateOf<String?>(null)
         private set
+    var leaderboardUsers by mutableStateOf<List<MobileUserLeaderboardItem>>(emptyList())
+        private set
+    var leaderboardJokes by mutableStateOf<List<MobileJoke>>(emptyList())
+        private set
+    var leaderboardError by mutableStateOf<String?>(null)
+        private set
+    var isLoadingLeaderboard by mutableStateOf(false)
+        private set
     var isLoadingFeed by mutableStateOf(false)
         private set
     var isLoadingComments by mutableStateOf(false)
@@ -111,7 +119,7 @@ class SessionStore(
     }
 
     suspend fun ensureGuestSession() {
-        if (currentUser != null || !accessToken.isNullOrBlank()) return
+        if (currentUser != null) return
         isSubmittingAuth = true
         authError = null
         try {
@@ -125,6 +133,22 @@ class SessionStore(
             authError = "Gastmodus konnte gerade nicht gestartet werden. Versuch es gleich noch einmal."
         } finally {
             isSubmittingAuth = false
+        }
+    }
+
+    suspend fun loadLeaderboard(scope: String, period: String) {
+        isLoadingLeaderboard = true
+        leaderboardError = null
+        try {
+            val result = apiClient.getLeaderboard(scope = scope, period = period, accessToken = accessToken)
+            leaderboardUsers = result.users
+            leaderboardJokes = result.jokes
+        } catch (err: MobileApiException) {
+            leaderboardError = err.message
+        } catch (err: Exception) {
+            leaderboardError = err.message ?: "Rangliste konnte nicht geladen werden."
+        } finally {
+            isLoadingLeaderboard = false
         }
     }
 

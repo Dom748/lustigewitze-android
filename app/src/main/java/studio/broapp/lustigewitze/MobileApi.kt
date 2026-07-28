@@ -95,6 +95,20 @@ data class MobileFeedResult(
     val nextCursor: Int?
 )
 
+data class MobileUserLeaderboardItem(
+    val id: String,
+    val username: String,
+    val jokeCount: Int,
+    val score: Int
+)
+
+data class MobileLeaderboardResult(
+    val scope: String,
+    val period: String,
+    val users: List<MobileUserLeaderboardItem>,
+    val jokes: List<MobileJoke>
+)
+
 data class MobileProfileResult(
     val user: MobileAuthUser,
     val stats: MobileProfileStats,
@@ -157,6 +171,23 @@ class MobileApiClient {
         return MobileFeedResult(
             items = parseJokes(json.optJSONArray("items")),
             nextCursor = json.optInt("nextCursor").takeIf { !json.isNull("nextCursor") }
+        )
+    }
+
+    suspend fun getLeaderboard(scope: String, period: String, accessToken: String? = null): MobileLeaderboardResult {
+        val encodedScope = URLEncoder.encode(scope, Charsets.UTF_8.name())
+        val encodedPeriod = URLEncoder.encode(period, Charsets.UTF_8.name())
+        val json = request(
+            "GET",
+            "/api/mobile/leaderboard?type=$encodedScope&period=$encodedPeriod&limit=50",
+            accessToken = accessToken
+        )
+        val items = json.optJSONArray("items")
+        return MobileLeaderboardResult(
+            scope = json.optString("scope", scope),
+            period = json.optString("period", period),
+            users = if (scope == "users") parseUserLeaderboardItems(items) else emptyList(),
+            jokes = if (scope == "jokes") parseJokes(items) else emptyList()
         )
     }
 
@@ -380,6 +411,24 @@ class MobileApiClient {
         return buildList {
             for (index in 0 until array.length()) {
                 add(parseJoke(array.getJSONObject(index)))
+            }
+        }
+    }
+
+    private fun parseUserLeaderboardItems(array: JSONArray?): List<MobileUserLeaderboardItem> {
+        if (array == null) return emptyList()
+        return buildList {
+            for (index in 0 until array.length()) {
+                val item = array.getJSONObject(index)
+                val nestedUser = item.optJSONObject("user")
+                add(
+                    MobileUserLeaderboardItem(
+                        id = item.optString("id").ifBlank { nestedUser?.optString("id").orEmpty() },
+                        username = item.optString("username").ifBlank { nestedUser?.optString("username").orEmpty() },
+                        jokeCount = item.optInt("jokeCount", 0),
+                        score = item.optInt("totalScore", item.optInt("score", 0))
+                    )
+                )
             }
         }
     }
