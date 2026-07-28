@@ -1828,8 +1828,8 @@ private fun JokeCard(
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        ComicCard(modifier = Modifier.clickable(onClick = onOpen)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        ComicCard(modifier = Modifier.clickable(onClick = onOpen), contentPadding = 10.dp) {
+            Row(verticalAlignment = Alignment.Top) {
                 Pill(joke.category, Comic.Yellow)
                 Spacer(Modifier.weight(1f))
                 ScoreBadge(score = joke.score)
@@ -1839,7 +1839,7 @@ private fun JokeCard(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 32.sp,
-                modifier = Modifier.padding(top = 14.dp)
+                modifier = Modifier.padding(top = 6.dp)
             )
             if (shouldShowContentDisclosure) {
                 JokeDisclosureButton(
@@ -1851,7 +1851,7 @@ private fun JokeCard(
                 authorUsername = joke.authorUsername,
                 onOpenProfile = onOpenProfile,
                 onReport = onReport,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
             if (joke.commentPreview != null && joke.commentCount > 0) {
                 JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)
@@ -1860,7 +1860,7 @@ private fun JokeCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 14.dp)
+                    .padding(top = 8.dp)
             ) {
                 ReactionTile(
                     "Top",
@@ -2428,7 +2428,7 @@ private fun ScoreBadge(score: Int, modifier: Modifier = Modifier) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
         ) {
             Text("🔥 Score", fontWeight = FontWeight.Black, fontSize = 10.sp, color = Comic.Ink)
             Text(if (score > 0) "+$score" else score.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = Comic.Ink)

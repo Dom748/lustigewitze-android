@@ -130,6 +130,15 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');
 });
 
+test('joke cards use tighter corner placement and vertical rhythm', () => {
+  assert.match(mainActivity, /ComicCard\(modifier = Modifier\.clickable\(onClick = onOpen\), contentPadding = 10\.dp\)/, 'Joke cards should use compact dedicated inner padding');
+  assert.match(mainActivity, /Row\(verticalAlignment = Alignment\.Top\) \{\s*Pill\(joke\.category, Comic\.Yellow\)[\s\S]*ScoreBadge\(score = joke\.score\)/, 'Category and score should hug the top corners');
+  assert.match(mainActivity, /visibleContent,[\s\S]*modifier = Modifier\.padding\(top = 6\.dp\)/, 'Joke text should start close beneath the category row');
+  assert.match(mainActivity, /onReport = onReport,[\s\S]*modifier = Modifier\.padding\(top = 8\.dp\)/, 'Metadata should sit closer to the joke text');
+  assert.match(mainActivity, /\.fillMaxWidth\(\)\s*\.padding\(top = 8\.dp\)/, 'Reaction actions should use compact top spacing');
+  assert.match(mainActivity, /private fun ScoreBadge\([\s\S]*Modifier\.padding\(horizontal = 8\.dp, vertical = 5\.dp\)/, 'Score badge should be smaller inside the top corner');
+});
+
 test('android manifest wires a first-party launcher icon resource', () => {
   assert.match(manifest, /android:icon="@mipmap\/ic_launcher"/, 'App should declare its own launcher icon');
   assert.match(manifest, /android:roundIcon="@mipmap\/ic_launcher_round"/, 'App should declare its own round launcher icon');
