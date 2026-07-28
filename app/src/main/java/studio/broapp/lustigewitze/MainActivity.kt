@@ -744,7 +744,7 @@ private fun RandomScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(top = 6.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
                 ScreenHeader(title = "Zufallswitz", subtitle = "Zieh dir eine Überraschung aus dem Witze-Stapel.", badge = "Random")
@@ -753,7 +753,7 @@ private fun RandomScreen(
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black)
             }
 
-            RandomQueueCard(currentIndex = currentIndex, total = jokes.size)
+            CompactRandomStatusRow(currentIndex = currentIndex, total = jokes.size)
 
             Box(
                 modifier = Modifier
@@ -787,16 +787,16 @@ private fun RandomScreen(
                 )
             }
 
+            PrimaryButton("Neuen Random-Witz laden", Icons.Filled.Refresh) {
+                advanceRandomStack()
+            }
+
             RandomInlineCommentSection(
                 joke = joke,
                 sessionStore = sessionStore,
                 onOpenProfile = onOpenProfile,
                 onAuthRequired = onAuthRequired
             )
-
-            PrimaryButton("Neuen Random-Witz laden", Icons.Filled.Refresh) {
-                advanceRandomStack()
-            }
         }
     }
 }
@@ -1816,6 +1816,7 @@ private fun JokeCard(
     onOpen: () -> Unit,
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit,
+    onReport: () -> Unit = onAuthRequired,
     truncatesLongContent: Boolean = true
 ) {
     var isContentExpanded by rememberSaveable(joke.id, truncatesLongContent) { mutableStateOf(false) }
@@ -1848,8 +1849,8 @@ private fun JokeCard(
             }
             JokeMetaStrip(
                 authorUsername = joke.authorUsername,
-                favoriteCount = joke.favoriteCount,
                 onOpenProfile = onOpenProfile,
+                onReport = onReport,
                 modifier = Modifier.padding(top = 12.dp)
             )
             if (joke.commentPreview != null && joke.commentCount > 0) {
@@ -2039,21 +2040,14 @@ private fun ProfileStatCard(title: String, value: String, accent: Color, modifie
 }
 
 @Composable
-private fun RandomQueueCard(currentIndex: Int, total: Int) {
-    Surface(
-        color = Comic.Cream,
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(2.dp, Comic.Ink),
+private fun CompactRandomStatusRow(currentIndex: Int, total: Int) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
-        ) {
-            Pill("Deck", Comic.YellowSoft)
-            Pill("${(currentIndex % total) + 1} / $total", Comic.BlueSoft)
-        }
+        Pill("Deck", Comic.YellowSoft)
+        Pill("${(currentIndex % total) + 1} / $total", Comic.BlueSoft)
     }
 }
 
@@ -2066,7 +2060,7 @@ private fun RandomUndoButton(onUndo: () -> Unit) {
         border = BorderStroke(2.dp, Comic.Ink)
     ) {
         Text(
-            "Undo zurückholen",
+            "Rückgängig",
             fontWeight = FontWeight.Black,
             color = Comic.Ink,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
@@ -2075,7 +2069,7 @@ private fun RandomUndoButton(onUndo: () -> Unit) {
 }
 
 @Composable
-private fun JokeMetaStrip(authorUsername: String, favoriteCount: Int, onOpenProfile: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun JokeMetaStrip(authorUsername: String, onOpenProfile: (String) -> Unit, onReport: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2097,7 +2091,21 @@ private fun JokeMetaStrip(authorUsername: String, favoriteCount: Int, onOpenProf
             )
         }
         Spacer(Modifier.weight(1f))
-        Pill("$favoriteCount Merker", Comic.BlueSoft)
+        Surface(
+            onClick = onReport,
+            color = Comic.Pink,
+            shape = RoundedCornerShape(999.dp),
+            border = BorderStroke(1.5.dp, Comic.Ink)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp)
+            ) {
+                Icon(Icons.Filled.Flag, contentDescription = "Melden", tint = Comic.Ink, modifier = Modifier.size(16.dp))
+                Text("Melden", color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 12.sp)
+            }
+        }
     }
 }
 
@@ -2182,8 +2190,8 @@ private fun RandomInlineCommentSection(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Pill("Kommentare (${comments.size})", Comic.BlueSoft)
@@ -2205,8 +2213,7 @@ private fun RandomInlineCommentSection(
             when {
                 sessionStore.isLoadingComments -> Text("Kommentare werden geladen...", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
                 sessionStore.detailCommentsError != null -> Text(sessionStore.detailCommentsError ?: "", color = Comic.Red, fontWeight = FontWeight.SemiBold)
-                visibleItems.isEmpty() -> Text("Noch keine Kommentare.", color = Comic.Muted, fontWeight = FontWeight.SemiBold)
-                else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                visibleItems.isNotEmpty() -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     visibleItems.forEach { comment ->
                         CommentCard(comment = comment, onOpenProfile = onOpenProfile)
                     }

@@ -76,15 +76,16 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /Die besten Witze der Community\./, 'The visibly truncated feed subtitle must not return');
   assert.doesNotMatch(mainActivity, /Pill\(if \(selectedSort == "latest"\) "Neu zuerst" else "Top zuerst", Comic\.Pink\)/, 'Feed filter should avoid duplicating the active sort state above the sort controls');
   assert.doesNotMatch(mainActivity, /Wie auf iOS: oben nur die wichtigsten Filter, direkt darunter die Kategorie-Leiste zum schnellen Durchscrollen\./, 'Feed filter should remove explanatory copy and start content sooner');
-  assert.match(mainActivity, /RandomQueueCard\(currentIndex = currentIndex, total = jokes\.size\)/, 'Random screen should show a dedicated deck/status card above the main joke card');
-  assert.doesNotMatch(mainActivity, /private fun RandomQueueCard\([^)]*undoAvailable/, 'Deck status must not expose a second undo action');
+  assert.match(mainActivity, /CompactRandomStatusRow\(currentIndex = currentIndex, total = jokes\.size\)/, 'Random screen should show compact deck/status pills above the main joke card');
+  assert.doesNotMatch(mainActivity, /private fun RandomQueueCard\(/, 'Random deck status must not use a bulky full-width card');
   assert.doesNotMatch(mainActivity, /Pill\(if \(undoAvailable\) "Undo"/, 'Undo must only appear in the dedicated button beneath the joke card');
   assert.match(mainActivity, /verticalScroll\(rememberScrollState\(\)\)/, 'Random screen should allow vertical scrolling when the active joke and comments exceed the viewport height');
   assert.match(mainActivity, /\.padding\(horizontal = 20\.dp\)[\s\S]*\.padding\(top = 6\.dp, bottom = 40\.dp\)/, 'Random content should reserve safe horizontal room and bottom clearance above navigation');
   assert.match(mainActivity, /\.rotate\(dragX \/ 80f\)/, 'Random swipe rotation should stay subtle enough to avoid edge clipping');
   assert.match(mainActivity, /RandomUndoButton\(/, 'Random screen should use a dedicated stitched undo control directly under the card');
-  assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, favoriteCount: Int, onOpenProfile: \(String\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable editorial author/meta strip');
-  assert.match(mainActivity, /Pill\("\$favoriteCount Merker", Comic\.BlueSoft\)/, 'Joke cards should surface save count in the new meta strip');
+  assert.match(mainActivity, /private fun JokeMetaStrip\(authorUsername: String, onOpenProfile: \(String\) -> Unit, onReport: \(\) -> Unit, modifier: Modifier = Modifier\)/, 'Joke cards should expose a reusable author/report strip');
+  assert.match(mainActivity, /Icon\(Icons\.Filled\.Flag, contentDescription = "Melden"[\s\S]*Text\("Melden"/, 'The old Merker count position should contain the report action');
+  assert.doesNotMatch(mainActivity, /Pill\("\$favoriteCount Merker"/, 'The unused Merker count must not return');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.ArrowBack/, 'Detail back action should use the auto-mirrored back icon');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.Login/, 'Login actions should use the auto-mirrored login icon');
   assert.match(mainActivity, /Icons\.AutoMirrored\.Filled\.List/, 'Feed tab should use the auto-mirrored list icon');
@@ -123,6 +124,7 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /ComicCard\([\s\S]*Row\(verticalAlignment = Alignment\.CenterVertically\) \{[\s\S]*Pill\(joke\.category, Comic\.Yellow\)[\s\S]*Spacer\(Modifier\.weight\(1f\)\)[\s\S]*ScoreBadge\(score = joke\.score\)/, 'Score badges should live inside the joke-card header row');
   assert.doesNotMatch(mainActivity, /ScoreBadge\([\s\S]{0,220}\.offset\(/, 'Score badges must not overlap or protrude beyond the card outline');
   assert.match(mainActivity, /Pill\("Kommentare \(\$\{comments\.size\}\)", Comic\.BlueSoft\)/, 'Random comments should use one compact count label');
+  assert.equal(mainActivity.indexOf('PrimaryButton("Neuen Random-Witz laden"') < mainActivity.indexOf('RandomInlineCommentSection('), true, 'The next-joke CTA should stay above comments and visible earlier in the Random flow');
   assert.match(mainActivity, /if \(showComposer\) "Schließen" else "Kommentar"/, 'Random comment action should use a short label on narrow screens');
   assert.doesNotMatch(mainActivity, /\.padding\([^\n]*\(-\d+\)\.dp/, 'Compose padding must never receive negative values');
   assert.match(mainActivity, /private fun ReactionTile\([\s\S]*Surface\([\s\S]*BorderStroke\(2\.dp, Comic\.Ink\)/, 'Reaction tiles should render as bordered stitched controls');

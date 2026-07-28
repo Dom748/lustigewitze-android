@@ -82,8 +82,14 @@ test("android random undo keeps a local stack in memory instead of restoring sta
   assert.equal(source.includes("undoStack = (undoStack + currentIndex).takeLast(8)"), true, "Random advance should push the current index onto the undo stack");
   assert.equal(source.includes("val previous = undoStack.last()"), true, "Undo should restore the most recent stack entry");
   assert.equal(source.includes("undoStack = undoStack.dropLast(1)"), true, "Undo should pop the restored stack entry after going back");
-  assert.equal(source.includes("RandomQueueCard(currentIndex = currentIndex, total = jokes.size)"), true, "Random should show the queue/deck card above the main joke card without duplicating undo");
+  assert.equal(source.includes("CompactRandomStatusRow(currentIndex = currentIndex, total = jokes.size)"), true, "Random should show compact queue/deck pills above the main joke card without duplicating undo");
   assert.equal(source.includes("RandomUndoButton("), true, "Random undo should use its dedicated stitched helper beneath the card");
+});
+
+test("android joke cards replace the unused Merker count with Melden", () => {
+  assert.equal(source.includes('Pill("$favoriteCount Merker"'), false, "The unused Merker count should be removed from joke metadata");
+  assert.equal(source.includes('contentDescription = "Melden"'), true, "Joke metadata should expose an accessible report action");
+  assert.equal(source.includes('Text("Melden"'), true, "Joke metadata should label the report action clearly");
 });
 
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
