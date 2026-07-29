@@ -147,4 +147,9 @@ test('android manifest wires a first-party launcher icon resource', () => {
   assert.equal(existsSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground.xml')), true, 'Launcher foreground drawable should exist');
   assert.equal(existsSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground_inset.xml')), true, 'Launcher foreground inset drawable should exist for correct Android scaling');
   assert.match(readFileSync(resolve(root, 'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml'), 'utf8'), /@drawable\/ic_launcher_foreground_inset/, 'Adaptive launcher icon should route through the inset foreground wrapper');
+  const foreground = readFileSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground.xml'), 'utf8');
+  assert.match(foreground, /android:gravity="fill"/, 'Adaptive foreground must scale into its icon bounds instead of rendering the 1024px source at intrinsic size');
+  assert.doesNotMatch(foreground, /android:gravity="center"/, 'Adaptive foreground must not center-crop the artwork down to an unrecognizable yellow/navy fragment');
+  const foregroundInset = readFileSync(resolve(root, 'app/src/main/res/drawable/ic_launcher_foreground_inset.xml'), 'utf8');
+  assert.match(foregroundInset, /android:insetLeft="4dp"[\s\S]*android:insetTop="4dp"[\s\S]*android:insetRight="4dp"[\s\S]*android:insetBottom="4dp"/, 'Adaptive artwork should retain a balanced safe-zone inset on every edge');
 });

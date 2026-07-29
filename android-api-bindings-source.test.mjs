@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android guest and leaderboard fixes ship as versionCode 23", () => {
-  assert.match(appGradle, /versionCode = 23/);
-  assert.match(appGradle, /versionName = "0\.1\.22"/);
+test("android launcher icon fix ships as versionCode 24", () => {
+  assert.match(appGradle, /versionCode = 24/);
+  assert.match(appGradle, /versionName = "0\.1\.23"/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
