@@ -23,13 +23,12 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.match(mainActivity, /compactVerticalPadding = 6\.dp/);
   assert.match(mainActivity, /compactHorizontalPadding: Dp = 6\.dp/);
   assert.match(mainActivity, /compactVerticalPadding: Dp = 11\.dp/);
-  assert.match(mainActivity, /vertical = if \(showTitle\) 10\.dp else compactVerticalPadding/);
-  assert.match(mainActivity, /horizontal = if \(showTitle\) 6\.dp else compactHorizontalPadding/);
-  assert.match(mainActivity, /Modifier\.size\(if \(showTitle\) 24\.dp else 32\.dp\)/);
+  assert.match(mainActivity, /if \(showTitle\) \{[\s\S]*Row\([\s\S]*Icon\(icon, title[\s\S]*Text\(title, fontSize = 12\.sp/);
+  assert.match(mainActivity, /Modifier\.size\(32\.dp\)/);
   assert.match(mainActivity, /else "Merken"/);
-  assert.match(mainActivity, /Icons\.Filled\.Bookmark,[\s\S]*Modifier\.weight\(1f\),[\s\S]*showTitle = false/);
+  assert.match(mainActivity, /Icons\.Filled\.Favorite,[\s\S]*Modifier\.weight\(1\.35f\),[\s\S]*showTitle = true/);
   assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/);
-  assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Lustige Witze"/);
+  assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*FeedHeader\(/);
   assert.match(mainActivity, /Box\(modifier = Modifier\.padding\(top = MOBILE_HEADER_TOP_INSET\)\) \{\s*ScreenHeader\(title = "Zufallswitz"/);
   assert.match(mainActivity, /Scaffold\(\s*containerColor = MaterialTheme\.colorScheme\.background,\s*bottomBar =/, 'Scaffold should own safe system insets once the top banner is removed');
   assert.doesNotMatch(mainActivity, /statusBarsPadding\(\)/, 'The removed banner must not leave manual status-bar padding behind');

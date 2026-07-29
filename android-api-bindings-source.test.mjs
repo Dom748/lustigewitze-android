@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android launcher icon fix ships as versionCode 24", () => {
-  assert.match(appGradle, /versionCode = 24/);
-  assert.match(appGradle, /versionName = "0\.1\.23"/);
+test("android iOS Stitch parity pass ships as versionCode 25", () => {
+  assert.match(appGradle, /versionCode = 25/);
+  assert.match(appGradle, /versionName = "0\.1\.24"/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
@@ -102,8 +102,8 @@ test("android feed screen now uses the live mobile feed instead of the local dem
   assert.match(mainActivity, /val visibleJokes = \(if \(sessionStore\.hasLoadedFeed\) \{/);
   assert.match(mainActivity, /sessionStore\.feedItems\.map \{ it\.toAppJoke\(\) \}/);
   assert.match(mainActivity, /FeedScreen\([\s\S]*selectedSort = feedSort,[\s\S]*selectedCategory = feedCategory,[\s\S]*feedError = sessionStore\.feedError,[\s\S]*canLoadMoreFeed = sessionStore\.canLoadMoreFeed/);
-  assert.match(mainActivity, /StatusPanel\("Feed lädt", "Android zieht jetzt echte Witze von \/api\/mobile\/feed\."\)/);
-  assert.match(mainActivity, /StatusPanel\("Feed live", "Android nutzt \/api\/mobile\/feed ohne lokale Demo-Pagination\."\)/);
+  assert.match(mainActivity, /StatusPanel\("Feed lädt", "Die neuesten Witze werden geladen\."\)/);
+  assert.doesNotMatch(mainActivity, /StatusPanel\("Feed live"/, "Technical end-of-feed panels should not bloat the iOS-like feed");
   assert.match(mainActivity, /PrimaryButton\("Mehr laden", Icons\.Filled\.Refresh, onClick = onLoadMore\)/);
   assert.doesNotMatch(mainActivity, /Naechster Schritt: API-Client an \/api\/mobile\/feed mit cursor anbinden\./);
 });

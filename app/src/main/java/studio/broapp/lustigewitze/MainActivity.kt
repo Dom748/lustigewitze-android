@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
@@ -48,6 +46,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.People
@@ -57,10 +57,11 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -430,48 +431,33 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Surface(
-                color = if (darkMode) Comic.DarkPaper else Comic.Cream,
-                shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
-                border = BorderStroke(2.dp, Comic.Ink),
-                shadowElevation = 10.dp,
+                color = if (darkMode) Comic.DarkPaper.copy(alpha = 0.96f) else Comic.Paper.copy(alpha = 0.96f),
+                shape = RoundedCornerShape(30.dp),
+                border = BorderStroke(1.5.dp, Comic.Ink.copy(alpha = 0.18f)),
+                shadowElevation = 12.dp,
                 modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 18.dp, vertical = 8.dp)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
                 NavigationBar(
                     containerColor = Color.Transparent,
                     tonalElevation = 0.dp,
-                    modifier = Modifier.height(68.dp)
+                    modifier = Modifier.height(64.dp)
                 ) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selectedTab == tab,
                             onClick = { selectedTabName = tab.name },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, fontWeight = FontWeight.Black) },
+                            icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(25.dp)) },
+                            label = { Text(tab.label, fontWeight = FontWeight.Black, fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Comic.Ink,
                                 selectedTextColor = if (darkMode) Comic.Yellow else Comic.Ink,
-                                indicatorColor = Comic.Yellow,
-                                unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted,
-                                unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Muted
+                                indicatorColor = if (darkMode) Comic.Yellow.copy(alpha = 0.78f) else Comic.Panel.copy(alpha = 0.72f),
+                                unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Ink,
+                                unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.78f) else Comic.Ink
                             )
                         )
-                        if (tab == Tab.Random) {
-                            NavigationBarItem(
-                                selected = false,
-                                onClick = { showComposer = true },
-                                icon = { Icon(Icons.Filled.Add, contentDescription = "Neuen Witz erstellen") },
-                                label = { Text("Neu", fontWeight = FontWeight.Black) },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Comic.Ink,
-                                    selectedTextColor = Comic.Ink,
-                                    indicatorColor = Comic.Yellow,
-                                    unselectedIconColor = if (darkMode) Comic.Cream.copy(alpha = 0.92f) else Comic.Ink,
-                                    unselectedTextColor = if (darkMode) Comic.Cream.copy(alpha = 0.92f) else Comic.Ink
-                                )
-                            )
-                        }
                     }
                 }
             }
@@ -494,8 +480,9 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
                     canLoadMoreFeed = sessionStore.canLoadMoreFeed,
                     onSelectSort = { feedSort = it },
                     onSelectCategory = { feedCategory = it },
-                    onRefresh = { scope.launch { sessionStore.loadFeed(sort = feedSort, category = feedCategory) } },
                     onLoadMore = { scope.launch { sessionStore.loadMoreFeed(sort = feedSort, category = feedCategory) } },
+                    onToggleTheme = onToggleTheme,
+                    onCreateJoke = { showComposer = true },
                     onOpenJoke = { selectedJoke = it },
                     onOpenProfile = { selectedProfileUsername = it },
                     onAuthRequired = { showAuth = true }
@@ -615,8 +602,9 @@ private fun FeedScreen(
     canLoadMoreFeed: Boolean,
     onSelectSort: (String) -> Unit,
     onSelectCategory: (String) -> Unit,
-    onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
+    onToggleTheme: () -> Unit,
+    onCreateJoke: () -> Unit,
     onOpenJoke: (Joke) -> Unit,
     onOpenProfile: (String) -> Unit,
     onAuthRequired: () -> Unit
@@ -628,7 +616,7 @@ private fun FeedScreen(
     ) {
         item {
             Box(modifier = Modifier.padding(top = MOBILE_HEADER_TOP_INSET)) {
-                ScreenHeader(title = "Lustige Witze", subtitle = "Community-Witze. Direkt loslachen.", badge = "Feed")
+                FeedHeader(onToggleTheme = onToggleTheme, onCreateJoke = onCreateJoke)
             }
             blockedUserMessage?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
@@ -636,32 +624,15 @@ private fun FeedScreen(
             feedError?.let {
                 Text(it, color = Comic.Red, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
             }
-            ComicCard(modifier = Modifier.padding(top = 8.dp), contentPadding = 10.dp) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Segment("Neu", selected = selectedSort == "latest") { onSelectSort("latest") }
-                    Segment("Top", selected = selectedSort == "top") { onSelectSort("top") }
-                    Segment("Reload", selected = false, onClick = onRefresh)
-                }
-                Text(
-                    "Kategorien ↔",
-                    color = Comic.Muted,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    feedCategoryOptions.forEach { option ->
-                        CompactSegment(option.label, selected = selectedCategory == option.apiValue) { onSelectCategory(option.apiValue) }
-                    }
-                }
-            }
+            FeedFilterBoard(
+                selectedSort = selectedSort,
+                selectedCategory = selectedCategory,
+                onSelectSort = onSelectSort,
+                onSelectCategory = onSelectCategory,
+                modifier = Modifier.padding(top = 8.dp)
+            )
             if (isLoadingFeed) {
-                StatusPanel("Feed lädt", "Android zieht jetzt echte Witze von /api/mobile/feed.")
+                StatusPanel("Feed lädt", "Die neuesten Witze werden geladen.")
             }
         }
 
@@ -680,16 +651,12 @@ private fun FeedScreen(
             }
         }
 
-        item {
-            when {
-                isLoadingMoreFeed -> StatusPanel("Mehr Feed lädt", "Nächste Seite wird gerade über den Cursor geladen.")
-                canLoadMoreFeed -> ComicCard {
-                    Text("Mehr laden", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    Text("Cursor ist vorhanden — lade die nächste Feed-Seite.", color = Comic.Muted, modifier = Modifier.padding(top = 8.dp))
-                    Spacer(Modifier.height(12.dp))
+        when {
+            isLoadingMoreFeed -> item { StatusPanel("Mehr Feed lädt", "Weitere Witze werden geladen.") }
+            canLoadMoreFeed -> item {
+                ComicCard {
                     PrimaryButton("Mehr laden", Icons.Filled.Refresh, onClick = onLoadMore)
                 }
-                else -> StatusPanel("Feed live", "Android nutzt /api/mobile/feed ohne lokale Demo-Pagination.")
             }
         }
     }
@@ -1885,19 +1852,21 @@ private fun JokeCard(
         joke.content
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        ComicCard(modifier = Modifier.clickable(onClick = onOpen), contentPadding = 10.dp) {
+    Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        StitchedJokeSurface(onClick = onOpen, contentPadding = 12.dp) {
             Row(verticalAlignment = Alignment.Top) {
-                Pill(joke.category, Comic.Yellow)
+                Pill(joke.category.uppercase(), Comic.Yellow)
                 Spacer(Modifier.weight(1f))
-                ScoreBadge(score = joke.score)
+                Spacer(Modifier.width(54.dp))
             }
             Text(
                 visibleContent,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 32.sp,
-                modifier = Modifier.padding(top = 6.dp)
+                softWrap = true,
+                overflow = TextOverflow.Visible,
+                modifier = Modifier.padding(top = 12.dp, end = 34.dp)
             )
             if (shouldShowContentDisclosure) {
                 JokeDisclosureButton(
@@ -1909,16 +1878,16 @@ private fun JokeCard(
                 authorUsername = joke.authorUsername,
                 onOpenProfile = onOpenProfile,
                 onReport = onReport,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 12.dp)
             )
             if (joke.commentPreview != null && joke.commentCount > 0) {
                 JokeCommentPreviewCard(commentPreview = joke.commentPreview, commentCount = joke.commentCount, onOpenProfile = onOpenProfile)
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
+                    .padding(top = 12.dp)
             ) {
                 ReactionTile(
                     "Top",
@@ -1952,14 +1921,164 @@ private fun JokeCard(
                 )
                 ReactionTile(
                     if (joke.viewerFavorite) "Gemerkt" else "Merken",
-                    Icons.Filled.Bookmark,
+                    Icons.Filled.Favorite,
                     joke.viewerFavorite,
-                    Modifier.weight(1f),
+                    Modifier.weight(1.35f),
                     onAuthRequired,
-                    showTitle = false,
+                    showTitle = true,
                     compactHorizontalPadding = 2.dp,
                     compactVerticalPadding = 6.dp
                 )
+            }
+        }
+        ScoreBadge(score = joke.score, modifier = Modifier.align(Alignment.TopEnd).offset(x = (-6).dp, y = (-8).dp))
+        JokeShareButton(
+            joke = joke,
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = (-8).dp, y = 38.dp)
+        )
+    }
+}
+
+@Composable
+private fun FeedHeader(onToggleTheme: () -> Unit, onCreateJoke: () -> Unit) {
+    Surface(
+        color = Comic.Paper,
+        contentColor = Comic.Ink,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.5.dp, Comic.Ink),
+        shadowElevation = 3.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(4.dp)
+                .border(BorderStroke(1.dp, Comic.Ink.copy(alpha = 0.26f)), RoundedCornerShape(14.dp))
+                .padding(start = 12.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Lustige Witze", fontSize = 28.sp, fontWeight = FontWeight.Black, lineHeight = 31.sp, maxLines = 1)
+                Text(
+                    "Die besten Witze der Community.",
+                    color = Comic.Muted,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                HeaderCircleAction(
+                    icon = Icons.Filled.LightMode,
+                    contentDescription = "Darstellung wechseln",
+                    onClick = onToggleTheme
+                )
+                HeaderCircleAction(
+                    icon = Icons.Filled.Add,
+                    contentDescription = "Neuen Witz erstellen",
+                    onClick = onCreateJoke,
+                    emphasized = true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderCircleAction(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    emphasized: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        color = Comic.Yellow,
+        shape = CircleShape,
+        border = BorderStroke(if (emphasized) 3.dp else 2.dp, Comic.Ink),
+        shadowElevation = if (emphasized) 6.dp else 2.dp,
+        modifier = Modifier.size(if (emphasized) 52.dp else 44.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = contentDescription, tint = Comic.Ink, modifier = Modifier.size(if (emphasized) 27.dp else 22.dp))
+        }
+    }
+}
+
+@Composable
+private fun FeedFilterBoard(
+    selectedSort: String,
+    selectedCategory: String,
+    onSelectSort: (String) -> Unit,
+    onSelectCategory: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var categoryExpanded by rememberSaveable { mutableStateOf(false) }
+    val selectedOption = feedCategoryOptions.firstOrNull { it.apiValue == selectedCategory } ?: feedCategoryOptions.first()
+
+    Surface(
+        color = Comic.Panel,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(2.5.dp, Comic.Ink),
+        shadowElevation = 3.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .border(BorderStroke(1.dp, Comic.Ink.copy(alpha = 0.24f)), RoundedCornerShape(12.dp))
+                .padding(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Segment("Neu", selected = selectedSort == "latest", modifier = Modifier.weight(1f)) { onSelectSort("latest") }
+                Segment("Top", selected = selectedSort == "top", modifier = Modifier.weight(1f)) { onSelectSort("top") }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Surface(
+                    color = Comic.BlueSoft,
+                    shape = RoundedCornerShape(999.dp),
+                    border = BorderStroke(2.dp, Comic.Ink),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp)
+                    ) {
+                        Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = Comic.Ink, modifier = Modifier.size(19.dp))
+                        Text("Alle Kategorien", color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1)
+                    }
+                }
+                Box {
+                    Surface(
+                        onClick = { categoryExpanded = true },
+                        color = Comic.Yellow,
+                        shape = RoundedCornerShape(999.dp),
+                        border = BorderStroke(2.dp, Comic.Ink)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+                        ) {
+                            Text(selectedOption.label, color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1)
+                            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Kategorie auswählen", tint = Comic.Ink, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    DropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
+                        feedCategoryOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label, fontWeight = FontWeight.Bold) },
+                                onClick = {
+                                    categoryExpanded = false
+                                    onSelectCategory(option.apiValue)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -2029,6 +2148,56 @@ private fun ComicCard(
 }
 
 @Composable
+private fun StitchedJokeSurface(
+    onClick: () -> Unit,
+    contentPadding: Dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = Comic.Paper,
+        contentColor = Comic.Ink,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(2.5.dp, Comic.Ink),
+        shadowElevation = 3.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        CompositionLocalProvider(LocalContentColor provides Comic.Ink) {
+            Column(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .border(BorderStroke(1.dp, Comic.Ink.copy(alpha = 0.22f)), RoundedCornerShape(14.dp))
+                    .padding(contentPadding),
+                content = content
+            )
+        }
+    }
+}
+
+@Composable
+private fun JokeShareButton(joke: Joke, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    Surface(
+        onClick = {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "${joke.content}\n\nhttps://lustigewitze.fun/j/${joke.id}")
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Witz teilen"))
+        },
+        color = Comic.Yellow,
+        shape = CircleShape,
+        border = BorderStroke(2.dp, Comic.Ink),
+        shadowElevation = 4.dp,
+        modifier = modifier.size(42.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Share, contentDescription = "Witz teilen", tint = Comic.Ink, modifier = Modifier.size(21.dp))
+        }
+    }
+}
+
+@Composable
 private fun Pill(title: String, fill: Color) {
     Surface(shape = RoundedCornerShape(8.dp), color = fill, border = BorderStroke(2.dp, Comic.Ink)) {
         Text(title, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
@@ -2036,17 +2205,19 @@ private fun Pill(title: String, fill: Color) {
 }
 
 @Composable
-private fun Segment(title: String, selected: Boolean, onClick: () -> Unit) {
-    AssistChip(
+private fun Segment(title: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
         onClick = onClick,
-        label = { Text(title, fontWeight = FontWeight.Black) },
+        color = if (selected) Comic.Yellow else Comic.Paper,
+        shape = RoundedCornerShape(10.dp),
         border = BorderStroke(2.dp, Comic.Ink),
-        shape = RoundedCornerShape(8.dp),
-        colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
-            containerColor = if (selected) Comic.Yellow else Comic.Paper,
-            labelColor = Comic.Ink
-        )
-    )
+        shadowElevation = if (selected) 3.dp else 0.dp,
+        modifier = modifier
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp), contentAlignment = Alignment.Center) {
+            Text(title, color = Comic.Ink, fontWeight = FontWeight.Black, fontSize = 16.sp, maxLines = 1)
+        }
+    }
 }
 
 @Composable
@@ -2133,25 +2304,21 @@ private fun JokeMetaStrip(authorUsername: String, onOpenProfile: (String) -> Uni
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        Surface(
-            color = Comic.Cream,
-            shape = RoundedCornerShape(999.dp),
-            border = BorderStroke(1.5.dp, Comic.Ink),
-            modifier = Modifier.clickable { onOpenProfile(authorUsername) }
-        ) {
-            Text(
-                "von @$authorUsername",
-                color = Comic.Muted,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
-            )
-        }
-        Spacer(Modifier.weight(1f))
+        Text(
+            "von @$authorUsername",
+            color = Comic.Muted,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onOpenProfile(authorUsername) }
+                .padding(vertical = 7.dp)
+        )
         Surface(
             onClick = onReport,
-            color = Comic.Pink,
+            color = Comic.Yellow,
             shape = RoundedCornerShape(999.dp),
             border = BorderStroke(1.5.dp, Comic.Ink)
         ) {
@@ -2479,17 +2646,19 @@ private fun SafetyPanel(onAuthRequired: () -> Unit, onBlockAuthor: () -> Unit) {
 @Composable
 private fun ScoreBadge(score: Int, modifier: Modifier = Modifier) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = Comic.Blue,
+        shape = RoundedCornerShape(999.dp),
+        color = Comic.Orange,
         border = BorderStroke(2.dp, Comic.Ink),
+        shadowElevation = 3.dp,
         modifier = modifier
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
-            Text("🔥 Score", fontWeight = FontWeight.Black, fontSize = 10.sp, color = Comic.Ink)
-            Text(if (score > 0) "+$score" else score.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = Comic.Ink)
+            Text("🔥", fontSize = 13.sp)
+            Text(score.toString(), fontWeight = FontWeight.Black, fontSize = 15.sp, color = Comic.Ink)
         }
     }
 }
@@ -2541,22 +2710,27 @@ private fun ReactionTile(
         border = BorderStroke(2.dp, Comic.Ink),
         modifier = modifier.clickable(onClick = onClick)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(
-                vertical = if (showTitle) 10.dp else compactVerticalPadding,
-                horizontal = if (showTitle) 6.dp else compactHorizontalPadding
-            )
-        ) {
-            Icon(
-                icon,
-                title,
-                tint = if (active) Comic.Red else Comic.Ink,
-                modifier = Modifier.size(if (showTitle) 24.dp else 32.dp)
-            )
-            if (showTitle) {
-                Text(title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        if (showTitle) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 8.dp)
+            ) {
+                Icon(icon, title, tint = if (active) Comic.Red else Comic.Ink, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            }
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(vertical = compactVerticalPadding, horizontal = compactHorizontalPadding)
+            ) {
+                Icon(
+                    icon,
+                    title,
+                    tint = if (active) Comic.Red else Comic.Ink,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
     }

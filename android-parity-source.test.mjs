@@ -107,7 +107,7 @@ test("android joke cards replace the unused Merker count with Melden", () => {
 test("android routes usernames into profile navigation from cards comments and leaderboard", () => {
   assert.equal(source.includes("var selectedProfileUsername by remember { mutableStateOf<String?>(null) }"), true, "App shell should track the selected profile username in regular in-memory state");
   assert.equal(source.includes("onOpenProfile = { selectedProfileUsername = it }"), true, "App shell should wire profile navigation callbacks into child screens");
-  assert.equal(source.includes("modifier = Modifier.clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author chip is tapped");
+  assert.equal(source.includes(".clickable { onOpenProfile(authorUsername) }"), true, "Joke cards should open a profile when the author label is tapped");
   assert.equal(source.includes('val previewUsername = commentPreview.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"'), true, "Comment preview rows should derive a safe fallback username before wiring profile navigation");
   assert.equal(source.includes('val commentUsername = comment.author?.username?.takeIf(String::isNotBlank) ?: "unbekannt"'), true, "Comment rows should derive a safe fallback username before wiring profile navigation");
   assert.equal(source.includes('modifier = Modifier.clickable(onClick = onOpenProfile)'), true, "Leaderboard rows should open a profile when the username is tapped");
