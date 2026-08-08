@@ -9,9 +9,9 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android TLS and guest reaction fix ships as versionCode 26", () => {
-  assert.match(appGradle, /versionCode = 26/);
-  assert.match(appGradle, /versionName = "0\.1\.25"/);
+test("android compact feed pass ships as versionCode 27", () => {
+  assert.match(appGradle, /versionCode = 27/);
+  assert.match(appGradle, /versionName = "0\.1\.26"/);
 });
 
 test("feed TLS failures use a user-facing German message instead of raw certificate text", () => {

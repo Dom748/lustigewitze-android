@@ -20,7 +20,7 @@ test('feed screen keeps vertical scrolling free and only uses horizontal swipe v
   assert.match(mainActivity, /Modifier\.weight\(1f\)/);
   assert.doesNotMatch(mainActivity, /Modifier\.width\(72\.dp\)/);
   assert.match(mainActivity, /compactHorizontalPadding = 2\.dp/);
-  assert.match(mainActivity, /compactVerticalPadding = 6\.dp/);
+  assert.match(mainActivity, /compactVerticalPadding = 5\.dp/);
   assert.match(mainActivity, /compactHorizontalPadding: Dp = 6\.dp/);
   assert.match(mainActivity, /compactVerticalPadding: Dp = 11\.dp/);
   assert.match(mainActivity, /if \(showTitle\) \{[\s\S]*Row\([\s\S]*Icon\(icon, title[\s\S]*Text\(title, fontSize = 12\.sp/);

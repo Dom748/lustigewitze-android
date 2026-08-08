@@ -34,7 +34,8 @@ test('android feed matches the compact iOS Stitch filter board', () => {
   assert.match(mainActivity, /private fun FeedFilterBoard\(/, 'Feed filters should use a dedicated iOS-like filter board');
   assert.match(mainActivity, /Segment\("Neu", selected = selectedSort == "latest", modifier = Modifier\.weight\(1f\)/, 'Neu and Top should fill the first filter row evenly');
   assert.match(mainActivity, /Segment\("Top", selected = selectedSort == "top", modifier = Modifier\.weight\(1f\)/, 'Top should mirror the iOS segmented row');
-  assert.match(mainActivity, /Text\("Alle Kategorien"/, 'Category row should use the iOS label');
+  assert.match(mainActivity, /Text\(selectedOption\.label/, 'Category row should show the selected category in one compact control');
+  assert.doesNotMatch(mainActivity, /Text\("Alle Kategorien"/, 'Category filtering should not duplicate a static category label next to the selected value');
   assert.match(mainActivity, /DropdownMenu\(/, 'Categories should open from one compact dropdown instead of a long chip rail');
   assert.doesNotMatch(mainActivity, /Segment\("Reload"/, 'Reload must not occupy a third primary filter segment');
   assert.doesNotMatch(mainActivity, /Text\(\s*"Kategorien ↔"/, 'Legacy horizontal-scroll helper must disappear');
@@ -76,7 +77,7 @@ test('guest profile stays readable and compact in dark mode', () => {
 });
 
 test('android cards typography profile and detail surfaces move closer to stitch polish', () => {
-  assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 24\.sp,[\s\S]*lineHeight = 32\.sp/, 'Joke cards should keep the bold iOS reading rhythm');
+  assert.match(mainActivity, /Text\(\s*visibleContent,[\s\S]*fontSize = 22\.sp,[\s\S]*lineHeight = 29\.sp/, 'Joke cards should use a compact but readable rhythm');
   assert.match(mainActivity, /Die besten Witze der Community\./, 'Feed header subtitle should match the iOS reference exactly');
   assert.match(mainActivity, /private fun StitchedJokeSurface\(/, 'Joke cards should use a dedicated double-border stitched surface');
   assert.match(mainActivity, /JokeShareButton\(/, 'Feed cards should expose the circular iOS-like share action');
@@ -103,6 +104,7 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.match(mainActivity, /Text\("Top Witze und Top User", color = Comic\.Muted, fontWeight = FontWeight\.SemiBold/, 'Leaderboard header should match the short iOS subtitle');
   assert.equal(mainActivity.includes('private fun LeaderboardFilterCard('), true, 'Leaderboard filters should use a dedicated compact filter card');
   assert.equal(mainActivity.includes('LeaderboardSegment("User", selected = selectedMode == "User", icon = Icons.Filled.People'), true, 'Leaderboard filters should use the iOS-like two-row compact filter card');
+  assert.match(mainActivity, /var selectedMode by rememberSaveable \{ mutableStateOf\("Witze"\) \}/, 'Leaderboard should open on jokes by default');
   assert.equal(mainActivity.includes('LeaderboardSegment("Alle", selected = selectedPeriod == "Alle"'), true, 'Leaderboard period filters should include Alle');
   assert.equal(mainActivity.includes('LeaderboardSegment("Heute", selected = selectedPeriod == "Heute"'), true, 'Leaderboard period filters should include Heute');
   assert.equal(mainActivity.includes('LeaderboardSegment("Woche", selected = selectedPeriod == "Woche"'), true, 'Leaderboard period filters should include Woche');
@@ -124,14 +126,14 @@ test('android cards typography profile and detail surfaces move closer to stitch
   assert.doesNotMatch(mainActivity, /"Navigation"/, 'Bottom navigation should not show the extra Navigation label above the tray');
   assert.doesNotMatch(mainActivity, /letterSpacing = 0\.6\.sp/, 'Bottom navigation label styling should disappear with the removed tray heading');
   assert.match(mainActivity, /private fun ScreenHeader\(title: String, subtitle: String, badge: String\) \{[\s\S]*\.padding\(horizontal = 14\.dp, vertical = 8\.dp\)[\s\S]*Row\(verticalAlignment = Alignment\.Top\)[\s\S]*Text\(\s*title,[\s\S]*fontSize = 26\.sp,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Text\(\s*subtitle,[\s\S]*maxLines = 2,[\s\S]*overflow = TextOverflow\.Ellipsis[\s\S]*Box\(modifier = Modifier\.padding\(top = 2\.dp\)\) \{[\s\S]*Pill\(badge, Comic\.Yellow\)/, 'Screen headers should stay compact, keep the badge top-aligned and allow two-line titles/subtitles');
-  assert.match(mainActivity, /contentPadding = androidx\.compose\.foundation\.layout\.PaddingValues\(start = 18\.dp, top = 18\.dp, end = 18\.dp, bottom = 40\.dp\)/, 'Feed should keep extra scroll clearance above the fixed navigation');
+  assert.match(mainActivity, /contentPadding = androidx\.compose\.foundation\.layout\.PaddingValues\(start = 14\.dp, top = 10\.dp, end = 14\.dp, bottom = 32\.dp\)/, 'Feed should use compact outer spacing while retaining bottom navigation clearance');
   assert.match(mainActivity, /private val MOBILE_HEADER_TOP_INSET = 6\.dp/, 'Screen heroes should keep a compact visible gap below the system status area');
   assert.doesNotMatch(mainActivity, /Pill\("LW", Comic\.Yellow\)/, 'The removed utility banner must not leave an LW brand pill behind');
   assert.doesNotMatch(mainActivity, /Text\(\s*"LustigeWitze",/, 'The removed utility banner must not duplicate the Lustige Witze screen title');
   assert.match(mainActivity, /ReactionTile\([\s\S]*"Top",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Runter",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*"Superlike",[\s\S]*Modifier\.weight\(1f\)[\s\S]*ReactionTile\([\s\S]*Icons\.Filled\.Favorite,[\s\S]*Modifier\.weight\(1\.35f\),[\s\S]*showTitle = true/, 'The iOS-like action row should keep three icon buttons plus a wider labelled Merken button');
   assert.match(mainActivity, /private fun ScoreBadge\(score: Int, modifier: Modifier = Modifier\) \{[\s\S]*RoundedCornerShape\(999\.dp\)[\s\S]*color = Comic\.Orange/, 'Score badges should use the compact orange iOS badge treatment');
-  assert.match(mainActivity, /StitchedJokeSurface\(onClick = onOpen, contentPadding = 12\.dp\)/, 'Joke cards should use the dedicated double-border Stitch surface');
-  assert.match(mainActivity, /ScoreBadge\(score = joke\.score, modifier = Modifier\.align\(Alignment\.TopEnd\)\.offset/, 'Score badges should overlap the upper card corner like the iOS reference');
+  assert.match(mainActivity, /StitchedJokeSurface\(onClick = onOpen, contentPadding = 10\.dp\)/, 'Joke cards should use a tighter Stitch surface');
+  assert.match(mainActivity, /ScoreBadge\(score = joke\.score, modifier = Modifier\.align\(Alignment\.TopEnd\)\.offset\(x = 8\.dp, y = \(-7\)\.dp\)\)/, 'Score should protrude beyond the upper-right card corner');
   assert.match(mainActivity, /Pill\("Kommentare \(\$\{comments\.size\}\)", Comic\.BlueSoft\)/, 'Random comments should use one compact count label');
   assert.equal(mainActivity.indexOf('PrimaryButton("Neuen Random-Witz laden"') < mainActivity.indexOf('RandomInlineCommentSection('), true, 'The next-joke CTA should stay above comments and visible earlier in the Random flow');
   assert.match(mainActivity, /if \(showComposer\) "Schließen" else "Kommentar"/, 'Random comment action should use a short label on narrow screens');
@@ -140,13 +142,20 @@ test('android cards typography profile and detail surfaces move closer to stitch
 });
 
 test('joke cards use tighter iOS Stitch corner placement and vertical rhythm', () => {
-  assert.match(mainActivity, /StitchedJokeSurface\(onClick = onOpen, contentPadding = 12\.dp\)/, 'Joke cards should use compact dedicated inner padding');
+  assert.match(mainActivity, /StitchedJokeSurface\(onClick = onOpen, contentPadding = 10\.dp\)/, 'Joke cards should use compact dedicated inner padding');
   assert.match(mainActivity, /Row\(verticalAlignment = Alignment\.Top\) \{\s*Pill\(joke\.category\.uppercase\(\), Comic\.Yellow\)/, 'Category should hug the upper left corner');
-  assert.match(mainActivity, /ScoreBadge\(score = joke\.score, modifier = Modifier\.align\(Alignment\.TopEnd\)\.offset\(x = \(-6\)\.dp, y = \(-8\)\.dp\)\)/, 'Score should use the compact iOS overlap');
-  assert.match(mainActivity, /visibleContent,[\s\S]*modifier = Modifier\.padding\(top = 12\.dp, end = 34\.dp\)/, 'Joke text should start close beneath the category row while clearing the share control');
-  assert.match(mainActivity, /onReport = onReport,[\s\S]*modifier = Modifier\.padding\(top = 12\.dp\)/, 'Metadata should sit close beneath the joke text');
-  assert.match(mainActivity, /\.fillMaxWidth\(\)\s*\.padding\(top = 12\.dp\)/, 'Reaction actions should use the iOS card rhythm');
-  assert.match(mainActivity, /private fun ScoreBadge\([\s\S]*Modifier\.padding\(horizontal = 10\.dp, vertical = 6\.dp\)/, 'Score badge should stay compact in the top corner');
+  assert.match(mainActivity, /ScoreBadge\(score = joke\.score, modifier = Modifier\.align\(Alignment\.TopEnd\)\.offset\(x = 8\.dp, y = \(-7\)\.dp\)\)/, 'Score should protrude slightly from the right edge');
+  assert.match(mainActivity, /visibleContent,[\s\S]*modifier = Modifier\.padding\(top = 8\.dp, end = 28\.dp\)/, 'Joke text should start sooner while clearing the floating controls');
+  assert.match(mainActivity, /onReport = onReport,[\s\S]*modifier = Modifier\.padding\(top = 8\.dp\)/, 'Metadata should sit tightly beneath the joke text');
+  assert.match(mainActivity, /\.fillMaxWidth\(\)\s*\.padding\(top = 8\.dp\)/, 'Reaction actions should use a tighter card rhythm');
+  assert.match(mainActivity, /private fun ScoreBadge\([\s\S]*Modifier\.padding\(horizontal = 8\.dp, vertical = 5\.dp\)/, 'Score badge should stay compact in the top corner');
+});
+
+test('feed shell is compact and avoids redundant filter chrome', () => {
+  assert.match(mainActivity, /verticalArrangement = Arrangement\.spacedBy\(10\.dp\)[\s\S]*FeedHeader/, 'Feed sections should sit closer together');
+  assert.match(mainActivity, /private fun FeedHeader\([\s\S]*fontSize = 25\.sp[\s\S]*Modifier\.size\(if \(emphasized\) 46\.dp else 40\.dp\)/, 'Feed hero and actions should be smaller');
+  assert.match(mainActivity, /private fun FeedFilterBoard\([\s\S]*verticalArrangement = Arrangement\.spacedBy\(6\.dp\)[\s\S]*Text\(selectedOption\.label/, 'Feed filters should use tight spacing and one category selector');
+  assert.match(mainActivity, /private fun Segment\([\s\S]*vertical = 8\.dp[\s\S]*fontSize = 15\.sp/, 'Sort segments should be compact');
 });
 
 test('android manifest wires a first-party launcher icon resource', () => {
