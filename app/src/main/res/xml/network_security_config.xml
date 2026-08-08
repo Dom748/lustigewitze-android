@@ -11,6 +11,7 @@
         <trust-anchors>
             <certificates src="system" />
             <certificates src="@raw/isrg_root_x1" />
+            <certificates src="@raw/isrg_root_x2" />
         </trust-anchors>
     </domain-config>
 </network-security-config>

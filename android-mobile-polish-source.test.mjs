@@ -14,6 +14,11 @@ test('mobile api requests run off the main thread so feed loading does not fail 
   assert.match(mobileApi, /import kotlinx\.coroutines\.withContext/, 'Mobile API client should import withContext');
 });
 
+test('production feed never falls back to preselected demo reactions after an API failure', () => {
+  assert.doesNotMatch(mainActivity, /private val demoJokes\s*=\s*listOf/, 'Shipping builds must not expose fake demo jokes when the live API fails');
+  assert.doesNotMatch(mainActivity, /else\s*\{\s*demoJokes\s*\}/, 'Feed failures must render the real error/empty state instead of fake liked and saved content');
+});
+
 test('mobile api tolerates missing nested authors so the Android app does not crash on sparse production payloads', () => {
   assert.match(mobileApi, /data class MobileJokeAuthor\([\s\S]*val id: String\? = null,[\s\S]*val username: String\? = null/, 'Joke author DTO should allow missing id/username values');
   assert.match(mobileApi, /data class MobileCommentAuthor\([\s\S]*val id: String\? = null,[\s\S]*val username: String\? = null/, 'Comment author DTO should allow missing id/username values');

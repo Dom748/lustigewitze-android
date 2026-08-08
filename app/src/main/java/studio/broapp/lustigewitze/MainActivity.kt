@@ -159,38 +159,6 @@ private const val LONG_JOKE_LENGTH_ERROR = "Witze über 420 Zeichen werden autom
 private const val JOKE_CARD_PREVIEW_LIMIT = 400
 private val MOBILE_HEADER_TOP_INSET = 6.dp
 
-private val demoJokes = listOf(
-    Joke(
-        id = "1",
-        content = "Warum nehmen Entwickler nie die Treppe? Weil sie lieber den Stack benutzen.",
-        category = "Tech",
-        authorId = "pointenpaule",
-        authorUsername = "pointenpaule",
-        score = 128,
-        favoriteCount = 24,
-        viewerVote = 1,
-        viewerFavorite = true
-    ),
-    Joke(
-        id = "2",
-        content = "Mein Kalender ist so voll, selbst meine Pausen brauchen jetzt Termine.",
-        category = "Arbeit",
-        authorId = "deadline_dieter",
-        authorUsername = "deadline_dieter",
-        score = 87,
-        favoriteCount = 11
-    ),
-    Joke(
-        id = "3",
-        content = "Ich wollte heute produktiv sein. Dann hat mein Sofa 'nur fuenf Minuten' gesagt.",
-        category = "Alltag",
-        authorId = "sofaprofi",
-        authorUsername = "sofaprofi",
-        score = 64,
-        favoriteCount = 9
-    )
-)
-
 private val demoComments = listOf(
     Comment("ehrenotto", "Bro der war stark."),
     Comment("lachflash", "Der Stack-Witz landet direkt in Favoriten.")
@@ -402,11 +370,9 @@ private fun AppShell(darkMode: Boolean, onToggleTheme: () -> Unit) {
         }
     }
 
-    val visibleJokes = (if (sessionStore.hasLoadedFeed) {
-        sessionStore.feedItems.map { it.toAppJoke() }
-    } else {
-        demoJokes
-    }).filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }
+    val visibleJokes = sessionStore.feedItems
+        .map { it.toAppJoke() }
+        .filterNot { blockedAuthors.contains(it.authorId) || blockedAuthors.contains(it.authorUsername) }
 
     startupError?.let { message ->
         FatalStartupFallback(

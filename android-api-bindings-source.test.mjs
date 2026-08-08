@@ -9,9 +9,14 @@ const apiClient = readFileSync(path.join(root, "app/src/main/java/studio/broapp/
 const sessionStore = readFileSync(path.join(root, "app/src/main/java/studio/broapp/lustigewitze/SessionStore.kt"), "utf8");
 const appGradle = readFileSync(path.join(root, "app/build.gradle.kts"), "utf8");
 
-test("android iOS Stitch parity pass ships as versionCode 25", () => {
-  assert.match(appGradle, /versionCode = 25/);
-  assert.match(appGradle, /versionName = "0\.1\.24"/);
+test("android TLS and guest reaction fix ships as versionCode 26", () => {
+  assert.match(appGradle, /versionCode = 26/);
+  assert.match(appGradle, /versionName = "0\.1\.25"/);
+});
+
+test("feed TLS failures use a user-facing German message instead of raw certificate text", () => {
+  assert.match(sessionStore, /feedError = "Sichere Verbindung zur Witze-API fehlgeschlagen\. Bitte aktualisiere die App oder versuche es erneut\."/);
+  assert.doesNotMatch(sessionStore, /feedError = err\.message \?: "Feed konnte nicht geladen werden\."/);
 });
 
 test("android ships a first-party mobile api client for auth profile feed and block flows", () => {
@@ -99,8 +104,8 @@ test("android guest profile no longer fakes a logged-in pointenpaule account", (
 });
 
 test("android feed screen now uses the live mobile feed instead of the local demo pagination placeholder", () => {
-  assert.match(mainActivity, /val visibleJokes = \(if \(sessionStore\.hasLoadedFeed\) \{/);
-  assert.match(mainActivity, /sessionStore\.feedItems\.map \{ it\.toAppJoke\(\) \}/);
+  assert.match(mainActivity, /val visibleJokes = sessionStore\.feedItems[\s\S]*\.map \{ it\.toAppJoke\(\) \}/);
+  assert.doesNotMatch(mainActivity, /demoJokes/);
   assert.match(mainActivity, /FeedScreen\([\s\S]*selectedSort = feedSort,[\s\S]*selectedCategory = feedCategory,[\s\S]*feedError = sessionStore\.feedError,[\s\S]*canLoadMoreFeed = sessionStore\.canLoadMoreFeed/);
   assert.match(mainActivity, /StatusPanel\("Feed lädt", "Die neuesten Witze werden geladen\."\)/);
   assert.doesNotMatch(mainActivity, /StatusPanel\("Feed live"/, "Technical end-of-feed panels should not bloat the iOS-like feed");

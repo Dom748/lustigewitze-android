@@ -197,7 +197,7 @@ class SessionStore(
             nextFeedCursor = null
             canLoadMoreFeed = false
         } catch (err: Exception) {
-            feedError = err.message ?: "Feed konnte nicht geladen werden."
+            feedError = "Sichere Verbindung zur Witze-API fehlgeschlagen. Bitte aktualisiere die App oder versuche es erneut."
             feedItems = emptyList()
             nextFeedCursor = null
             canLoadMoreFeed = false
